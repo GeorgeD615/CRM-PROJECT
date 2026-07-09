@@ -18,6 +18,9 @@ dotnet_diagnostic.CA1034.severity = none
 # CA1515: internal-типы — MVC-контроллеры обязаны быть public для discovery фреймворком
 dotnet_diagnostic.CA1515.severity = none
 
+# CA1308: нормализация строк в верхний регистр — slug и path канонически в нижнем регистре
+dotnet_diagnostic.CA1308.severity = none
+
 # MA0004: ConfigureAwait — не нужен в ASP.NET Core
 dotnet_diagnostic.MA0004.severity = none
 
