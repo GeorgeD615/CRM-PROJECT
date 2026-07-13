@@ -17,6 +17,15 @@ public sealed class Location
         UpdatedAt = CreatedAt;
     }
 
+    // Для EF Core: owned-навигацию Address нельзя привязать к параметру конструктора,
+    // она заполняется материализатором после создания объекта.
+    private Location(LocationId id, LocationName name)
+    {
+        Id = id;
+        Name = name;
+        Address = null!;
+    }
+
     public LocationId Id { get; }
 
     public LocationName Name { get; private set; }

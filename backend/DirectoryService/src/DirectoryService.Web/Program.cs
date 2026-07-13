@@ -11,7 +11,9 @@ builder.Services.AddHealthChecks();
 string connectionString = builder.Configuration.GetConnectionString("DirectoryServiceDb")
     ?? throw new InvalidOperationException("Connection string 'DirectoryServiceDb' is not configured.");
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
+    connectionString,
+    npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 
 WebApplication app = builder.Build();
 
