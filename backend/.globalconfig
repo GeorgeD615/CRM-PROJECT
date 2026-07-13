@@ -21,6 +21,9 @@ dotnet_diagnostic.CA1515.severity = none
 # CA1308: нормализация строк в верхний регистр — slug и path канонически в нижнем регистре
 dotnet_diagnostic.CA1308.severity = none
 
+# CA1861: константные массивы в аргументах — срабатывает на сгенерированных EF-миграциях
+dotnet_diagnostic.CA1861.severity = none
+
 # MA0004: ConfigureAwait — не нужен в ASP.NET Core
 dotnet_diagnostic.MA0004.severity = none
 
