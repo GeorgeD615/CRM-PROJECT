@@ -4,6 +4,8 @@ using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddHealthChecks();
@@ -18,6 +20,8 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
 WebApplication app = builder.Build();
 
 app.MapHealthChecks("/api/health");
+
+app.MapControllers();
 
 if (!app.Environment.IsProduction())
 {
