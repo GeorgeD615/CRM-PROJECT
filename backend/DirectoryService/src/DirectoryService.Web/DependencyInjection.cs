@@ -1,6 +1,5 @@
 using DirectoryService.Core;
 using DirectoryService.Infrastructure.Postgres;
-using Microsoft.EntityFrameworkCore;
 
 namespace DirectoryService.Web;
 
@@ -19,12 +18,7 @@ public static class DependencyInjection
 
         services.AddHealthChecks();
 
-        string connectionString = configuration.GetConnectionString("DirectoryServiceDb")
-            ?? throw new InvalidOperationException("Connection string 'DirectoryServiceDb' is not configured.");
-
-        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
+        services.AddInfrastructure(configuration);
 
         services.AddCore();
 

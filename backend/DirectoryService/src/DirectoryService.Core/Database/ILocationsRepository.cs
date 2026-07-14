@@ -1,10 +1,10 @@
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 
-namespace DirectoryService.Core.Locations;
+namespace DirectoryService.Core.Database;
 
 /// <summary>
-/// Контракт хранилища локаций. Реализация появится в инфраструктурном слое.
+/// Контракт хранилища локаций. Реализации живут в инфраструктурном слое.
 /// </summary>
 public interface ILocationsRepository
 {

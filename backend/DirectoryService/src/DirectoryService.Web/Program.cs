@@ -8,7 +8,7 @@ builder.Services.AddWebDependencies(builder.Configuration);
 builder.Host.UseDefaultServiceProvider(options =>
 {
     options.ValidateScopes = builder.Environment.IsDevelopment();
-    options.ValidateOnBuild = false;
+    options.ValidateOnBuild = builder.Environment.IsDevelopment();
 });
 
 WebApplication app = builder.Build();
