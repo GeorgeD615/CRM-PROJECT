@@ -32,6 +32,7 @@ public sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
             address.Property(a => a.City).HasJsonPropertyName("city");
             address.Property(a => a.Street).HasJsonPropertyName("street");
             address.Property(a => a.House).HasJsonPropertyName("house");
+            address.Property(a => a.Apartment).HasJsonPropertyName("apartment");
         });
 
         builder.Navigation(l => l.Address).IsRequired();

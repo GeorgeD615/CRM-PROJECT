@@ -1,22 +1,34 @@
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Core.Locations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// Заглушка API локаций: контракты и коды ответов настоящие, реализация придёт в следующих задачах.
+/// API локаций. Создание делегируется в Core, остальные операции — заглушки до следующих задач.
 /// </summary>
 [ApiController]
 [Route("api/locations")]
 public sealed class LocationsController : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<LocationResponse>(StatusCodes.Status201Created)]
-    public ActionResult<LocationResponse> Create([FromBody] CreateLocationRequest request)
+    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<Guid>> Create(
+        [FromBody] CreateLocationRequest request,
+        [FromServices] LocationsService locationsService,
+        CancellationToken cancellationToken)
     {
-        var response = new LocationResponse(Guid.NewGuid(), request.Name, request.Address);
+        try
+        {
+            Guid id = await locationsService.CreateAsync(request, cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+            return CreatedAtAction(nameof(GetById), new { id }, id);
+        }
+        catch (LocationNameAlreadyTakenException exception)
+        {
+            return Conflict(exception.Message);
+        }
     }
 
     [HttpGet]

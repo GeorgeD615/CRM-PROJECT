@@ -21,6 +21,15 @@ dotnet_diagnostic.CA1515.severity = none
 # CA1308: нормализация строк в верхний регистр — slug и path канонически в нижнем регистре
 dotnet_diagnostic.CA1308.severity = none
 
+# CA1032, RCS1194: стандартные конструкторы исключений — бизнес-исключения создаются
+# только с обязательным контекстом, конструкторы без сообщения не нужны
+dotnet_diagnostic.CA1032.severity = none
+dotnet_diagnostic.RCS1194.severity = none
+
+# CA1724: конфликт имени типа с пространством имён — соглашение проекта:
+# в каждом слое класс DependencyInjection с методом регистрации сервисов
+dotnet_diagnostic.CA1724.severity = none
+
 # CA1861: константные массивы в аргументах — срабатывает на сгенерированных EF-миграциях
 dotnet_diagnostic.CA1861.severity = none
 

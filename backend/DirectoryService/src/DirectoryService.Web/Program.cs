@@ -1,21 +1,15 @@
-using DirectoryService.Infrastructure.Postgres;
-using Microsoft.EntityFrameworkCore;
+using DirectoryService.Web;
 using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddWebDependencies(builder.Configuration);
 
-builder.Services.AddOpenApi();
-
-builder.Services.AddHealthChecks();
-
-string connectionString = builder.Configuration.GetConnectionString("DirectoryServiceDb")
-    ?? throw new InvalidOperationException("Connection string 'DirectoryServiceDb' is not configured.");
-
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(
-    connectionString,
-    npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateScopes = builder.Environment.IsDevelopment();
+    options.ValidateOnBuild = false;
+});
 
 WebApplication app = builder.Build();
 
