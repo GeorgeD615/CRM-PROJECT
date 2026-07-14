@@ -1,7 +1,9 @@
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Core.Database;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Locations;
 
@@ -12,13 +14,16 @@ public sealed class LocationsService
 {
     private readonly IValidator<CreateLocationRequest> _createValidator;
     private readonly ILocationsRepository _locationsRepository;
+    private readonly ILogger<LocationsService> _logger;
 
     public LocationsService(
         IValidator<CreateLocationRequest> createValidator,
-        ILocationsRepository locationsRepository)
+        ILocationsRepository locationsRepository,
+        ILogger<LocationsService> logger)
     {
         _createValidator = createValidator;
         _locationsRepository = locationsRepository;
+        _logger = logger;
     }
 
     /// <summary>
@@ -37,12 +42,19 @@ public sealed class LocationsService
             request.Address.Apartment);
 
         if (await _locationsRepository.IsNameTakenAsync(name, cancellationToken))
+        {
+            _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
+
             throw new LocationNameAlreadyTakenException(name.Value);
+        }
 
         var location = Location.Create(name, address);
+        Guid id = location.Id.Value;
 
         await _locationsRepository.AddAsync(location, cancellationToken);
 
-        return location.Id.Value;
+        _logger.LogInformation("Location {LocationId} created.", id);
+
+        return id;
     }
 }
