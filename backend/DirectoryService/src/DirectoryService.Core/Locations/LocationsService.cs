@@ -30,7 +30,11 @@ public sealed class LocationsService
         await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var name = LocationName.Create(request.Name);
-        var address = LocationAddress.Create(request.Address.City, request.Address.Street, request.Address.House);
+        var address = LocationAddress.Create(
+            request.Address.City,
+            request.Address.Street,
+            request.Address.House,
+            request.Address.Apartment);
 
         if (await _locationsRepository.IsNameTakenAsync(name, cancellationToken))
             throw new LocationNameAlreadyTakenException(name.Value);

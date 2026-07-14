@@ -22,5 +22,9 @@ public sealed class AddressDtoValidator : AbstractValidator<AddressDto>
         RuleFor(a => a.House)
             .NotEmpty()
             .MaximumLength(LocationAddress.MaxHouseLength);
+
+        RuleFor(a => a.Apartment)
+            .NotEmpty()
+            .MaximumLength(LocationAddress.MaxApartmentLength);
     }
 }
