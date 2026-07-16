@@ -1,5 +1,4 @@
 using DirectoryService.Core.Database;
-using DirectoryService.Infrastructure.Postgres.Database;
 using DirectoryService.Infrastructure.Postgres.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,10 +22,9 @@ public static class DependencyInjection
             connectionString,
             npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 
-        services.AddSingleton<IDbConnectionFactory>(_ => new NpgSqlConnectionFactory(connectionString));
 
-        services.AddScoped<ILocationsRepository, DapperLocationsRepository>();
-        //// services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
+        services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
+        services.AddScoped<IDepartmentsRepository, EfCoreDepartmentsRepository>();
 
         return services;
     }

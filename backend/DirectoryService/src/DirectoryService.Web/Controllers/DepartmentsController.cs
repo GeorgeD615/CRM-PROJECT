@@ -1,27 +1,37 @@
 using DirectoryService.Contracts.Departments;
+using DirectoryService.Core.Departments;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// Заглушка API подразделений: контракты и коды ответов настоящие, реализация придёт в следующих задачах.
+/// API подразделений. Создание делегируется в Core, остальные операции — заглушки до следующих задач.
 /// </summary>
 [ApiController]
 [Route("api/departments")]
 public sealed class DepartmentsController : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<DepartmentResponse>(StatusCodes.Status201Created)]
-    public ActionResult<DepartmentResponse> Create([FromBody] CreateDepartmentRequest request)
+    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Guid>> Create(
+        [FromBody] CreateDepartmentRequest request,
+        [FromServices] CreateDepartmentHandler createDepartmentHandler,
+        CancellationToken cancellationToken)
     {
-        var response = new DepartmentResponse(
-            Guid.NewGuid(),
-            request.Name,
-            request.Slug,
-            request.Slug,
-            request.ParentId);
-
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+        try
+        {
+            Guid id = await createDepartmentHandler.HandleAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id }, id);
+        }
+        catch (ParentDepartmentNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (LocationsNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
     }
 
     [HttpGet]

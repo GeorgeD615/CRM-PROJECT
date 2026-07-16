@@ -16,13 +16,12 @@ public sealed class LocationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Guid>> Create(
         [FromBody] CreateLocationRequest request,
-        [FromServices] LocationsService locationsService,
+        [FromServices] CreateLocationHandler createLocationHandler,
         CancellationToken cancellationToken)
     {
         try
         {
-            Guid id = await locationsService.CreateAsync(request, cancellationToken);
-
+            Guid id = await createLocationHandler.HandleAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id }, id);
         }
         catch (LocationNameAlreadyTakenException exception)

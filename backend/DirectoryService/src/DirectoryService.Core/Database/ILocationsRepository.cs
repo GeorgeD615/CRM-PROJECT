@@ -4,7 +4,7 @@ using DirectoryService.Domain.ValueObjects;
 namespace DirectoryService.Core.Database;
 
 /// <summary>
-/// Контракт хранилища локаций. Реализации живут в инфраструктурном слое.
+/// Контракт хранилища локаций.
 /// </summary>
 public interface ILocationsRepository
 {
@@ -17,4 +17,11 @@ public interface ILocationsRepository
     /// Добавляет новую локацию и сохраняет изменения.
     /// </summary>
     Task AddAsync(Location location, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Возвращает те из переданных id, для которых локация существует.
+    /// </summary>
+    Task<IReadOnlyCollection<LocationId>> GetExistingIdsAsync(
+        IReadOnlyCollection<LocationId> locationIds,
+        CancellationToken cancellationToken);
 }
