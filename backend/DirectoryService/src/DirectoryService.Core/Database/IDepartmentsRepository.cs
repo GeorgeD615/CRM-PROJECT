@@ -14,10 +14,8 @@ public interface IDepartmentsRepository
     Task<Department?> GetByIdAsync(DepartmentId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Добавляет подразделение вместе с его связями с локациями
+    /// Добавляет подразделение вместе с его связями с локациями.
+    /// Фиксация изменений — через <see cref="ITransactionManager"/>.
     /// </summary>
-    Task AddAsync(
-        Department department,
-        IReadOnlyCollection<DepartmentLocation> departmentLocations,
-        CancellationToken cancellationToken);
+    void Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
 }

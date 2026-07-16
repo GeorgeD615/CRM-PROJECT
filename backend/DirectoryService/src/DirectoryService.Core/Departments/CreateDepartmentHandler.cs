@@ -17,17 +17,20 @@ public sealed class CreateDepartmentHandler
     private readonly IValidator<CreateDepartmentRequest> _validator;
     private readonly IDepartmentsRepository _departmentsRepository;
     private readonly ILocationsRepository _locationsRepository;
+    private readonly ITransactionManager _transactionManager;
     private readonly ILogger<CreateDepartmentHandler> _logger;
 
     public CreateDepartmentHandler(
         IValidator<CreateDepartmentRequest> validator,
         IDepartmentsRepository departmentsRepository,
         ILocationsRepository locationsRepository,
+        ITransactionManager transactionManager,
         ILogger<CreateDepartmentHandler> logger)
     {
         _validator = validator;
         _departmentsRepository = departmentsRepository;
         _locationsRepository = locationsRepository;
+        _transactionManager = transactionManager;
         _logger = logger;
     }
 
@@ -53,7 +56,9 @@ public sealed class CreateDepartmentHandler
             .Select(locationId => DepartmentLocation.Create(department.Id, locationId, isPrimary: false))
             .ToArray();
 
-        await _departmentsRepository.AddAsync(department, departmentLocations, cancellationToken);
+        _departmentsRepository.Add(department, departmentLocations);
+
+        await _transactionManager.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Department {DepartmentId} created with path {DepartmentPath} and {LocationCount} locations.",

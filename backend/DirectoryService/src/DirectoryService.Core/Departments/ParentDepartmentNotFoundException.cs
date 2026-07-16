@@ -7,7 +7,7 @@ namespace DirectoryService.Core.Departments;
 public sealed class ParentDepartmentNotFoundException : Exception
 {
     public ParentDepartmentNotFoundException(Guid parentId)
-        : base($"Parent department '{parentId}' does not exist.")
+        : base($"Родительское подразделение '{parentId}' не найдено.")
     {
         ParentId = parentId;
     }

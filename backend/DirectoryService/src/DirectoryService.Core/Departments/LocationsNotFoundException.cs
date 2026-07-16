@@ -7,7 +7,7 @@ namespace DirectoryService.Core.Departments;
 public sealed class LocationsNotFoundException : Exception
 {
     public LocationsNotFoundException(IReadOnlyCollection<Guid> locationIds)
-        : base($"Locations do not exist: {string.Join(", ", locationIds)}.")
+        : base($"Локации не найдены: {string.Join(", ", locationIds)}.")
     {
         LocationIds = locationIds;
     }
