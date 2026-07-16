@@ -15,7 +15,6 @@ public sealed class PositionsController : ControllerBase
     public ActionResult<PositionResponse> Create([FromBody] CreatePositionRequest request)
     {
         var response = new PositionResponse(Guid.NewGuid(), request.Name);
-
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
 

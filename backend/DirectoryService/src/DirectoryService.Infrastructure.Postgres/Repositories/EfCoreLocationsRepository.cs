@@ -23,12 +23,19 @@ public sealed class EfCoreLocationsRepository : ILocationsRepository
     public Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken) =>
         _dbContext.Locations.AnyAsync(l => l.Name == name, cancellationToken);
 
+    public async Task<IReadOnlyCollection<LocationId>> GetExistingIdsAsync(
+        IReadOnlyCollection<LocationId> locationIds,
+        CancellationToken cancellationToken) =>
+        await _dbContext.Locations
+            .Where(l => locationIds.Contains(l.Id))
+            .Select(l => l.Id)
+            .ToArrayAsync(cancellationToken);
+
     public async Task AddAsync(Location location, CancellationToken cancellationToken)
     {
         try
         {
             _dbContext.Locations.Add(location);
-
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (Exception exception)

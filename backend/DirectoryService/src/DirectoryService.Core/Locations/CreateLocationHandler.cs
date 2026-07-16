@@ -8,31 +8,28 @@ using Microsoft.Extensions.Logging;
 namespace DirectoryService.Core.Locations;
 
 /// <summary>
-/// Бизнес-сценарии работы с локациями.
+/// Сценарий создания локации: валидирует запрос, проверяет уникальность имени
+/// и возвращает id созданной локации.
 /// </summary>
-public sealed class LocationsService
+public sealed class CreateLocationHandler
 {
-    private readonly IValidator<CreateLocationRequest> _createValidator;
+    private readonly IValidator<CreateLocationRequest> _validator;
     private readonly ILocationsRepository _locationsRepository;
-    private readonly ILogger<LocationsService> _logger;
+    private readonly ILogger<CreateLocationHandler> _logger;
 
-    public LocationsService(
-        IValidator<CreateLocationRequest> createValidator,
+    public CreateLocationHandler(
+        IValidator<CreateLocationRequest> validator,
         ILocationsRepository locationsRepository,
-        ILogger<LocationsService> logger)
+        ILogger<CreateLocationHandler> logger)
     {
-        _createValidator = createValidator;
+        _validator = validator;
         _locationsRepository = locationsRepository;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Создаёт локацию: валидирует запрос, проверяет уникальность имени
-    /// и возвращает id созданной локации.
-    /// </summary>
-    public async Task<Guid> CreateAsync(CreateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<Guid> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
     {
-        await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
+        await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var name = LocationName.Create(request.Name);
         var address = LocationAddress.Create(

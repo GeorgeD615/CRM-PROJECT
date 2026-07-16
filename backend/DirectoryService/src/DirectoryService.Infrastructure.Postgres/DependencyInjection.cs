@@ -23,10 +23,10 @@ public static class DependencyInjection
             connectionString,
             npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 
-        services.AddSingleton<IDbConnectionFactory>(_ => new NpgSqlConnectionFactory(connectionString));
 
-        services.AddScoped<ILocationsRepository, DapperLocationsRepository>();
-        //// services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
+        services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
+        services.AddScoped<IDepartmentsRepository, EfCoreDepartmentsRepository>();
+        services.AddScoped<ITransactionManager, TransactionManager>();
 
         return services;
     }
