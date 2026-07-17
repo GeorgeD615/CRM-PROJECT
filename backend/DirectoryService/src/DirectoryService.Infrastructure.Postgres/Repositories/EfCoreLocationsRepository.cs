@@ -20,6 +20,9 @@ public sealed class EfCoreLocationsRepository : ILocationsRepository
         _logger = logger;
     }
 
+    public Task<Location?> GetByIdAsync(LocationId id, CancellationToken cancellationToken) =>
+        _dbContext.Locations.FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+
     public Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken) =>
         _dbContext.Locations.AnyAsync(l => l.Name == name, cancellationToken);
 
