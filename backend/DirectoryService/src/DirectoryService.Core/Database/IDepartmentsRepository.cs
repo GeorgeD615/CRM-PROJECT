@@ -15,7 +15,24 @@ public interface IDepartmentsRepository
 
     /// <summary>
     /// Добавляет подразделение вместе с его связями с локациями.
-    /// Фиксация изменений — через <see cref="ITransactionManager"/>.
     /// </summary>
     void Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
+
+    /// <summary>
+    /// Возвращает связь подразделения с локацией или null, если связи нет.
+    /// </summary>
+    Task<DepartmentLocation?> GetDepartmentLocationAsync(
+        DepartmentId departmentId,
+        LocationId locationId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Добавляет связь подразделения с локацией.
+    /// </summary>
+    void AddDepartmentLocation(DepartmentLocation departmentLocation);
+
+    /// <summary>
+    /// Удаляет связь подразделения с локацией.
+    /// </summary>
+    void RemoveDepartmentLocation(DepartmentLocation departmentLocation);
 }

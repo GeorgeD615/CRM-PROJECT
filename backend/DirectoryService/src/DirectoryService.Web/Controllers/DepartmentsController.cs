@@ -1,5 +1,6 @@
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Departments;
+using DirectoryService.Core.Locations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
@@ -49,19 +50,73 @@ public sealed class DepartmentsController : ControllerBase
         return NotFound();
     }
 
-    [HttpPut("{id:guid}")]
-    [ProducesResponseType<DepartmentResponse>(StatusCodes.Status200OK)]
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<DepartmentResponse> Update([FromRoute] Guid id, [FromBody] UpdateDepartmentRequest request)
+    public async Task<IActionResult> Update(
+        [FromRoute] Guid id,
+        [FromBody] UpdateDepartmentRequest request,
+        [FromServices] UpdateDepartmentHandler updateDepartmentHandler,
+        CancellationToken cancellationToken)
     {
-        var response = new DepartmentResponse(
-            id,
-            request.Name,
-            "stub-slug",
-            "stub-slug",
-            null);
+        try
+        {
+            await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
+            return NoContent();
+        }
+        catch (DepartmentNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+    }
 
-        return Ok(response);
+    [HttpPost("{departmentId:guid}/locations/{locationId:guid}")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AttachLocation(
+        [FromRoute] Guid departmentId,
+        [FromRoute] Guid locationId,
+        [FromServices] AttachLocationHandler attachLocationHandler,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+            return Created();
+        }
+        catch (DepartmentNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (LocationNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (DepartmentLocationAlreadyExistsException exception)
+        {
+            return Conflict(exception.Message);
+        }
+    }
+
+    [HttpDelete("{departmentId:guid}/locations/{locationId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DetachLocation(
+        [FromRoute] Guid departmentId,
+        [FromRoute] Guid locationId,
+        [FromServices] DetachLocationHandler detachLocationHandler,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+            return NoContent();
+        }
+        catch (DepartmentLocationNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
     }
 
     [HttpDelete("{id:guid}")]

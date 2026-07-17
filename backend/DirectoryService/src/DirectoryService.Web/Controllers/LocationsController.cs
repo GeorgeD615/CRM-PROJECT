@@ -45,14 +45,29 @@ public sealed class LocationsController : ControllerBase
         return NotFound();
     }
 
-    [HttpPut("{id:guid}")]
-    [ProducesResponseType<LocationResponse>(StatusCodes.Status200OK)]
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<LocationResponse> Update([FromRoute] Guid id, [FromBody] UpdateLocationRequest request)
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Update(
+        [FromRoute] Guid id,
+        [FromBody] UpdateLocationRequest request,
+        [FromServices] UpdateLocationHandler updateLocationHandler,
+        CancellationToken cancellationToken)
     {
-        var response = new LocationResponse(id, request.Name, request.Address);
-
-        return Ok(response);
+        try
+        {
+            await updateLocationHandler.HandleAsync(id, request, cancellationToken);
+            return NoContent();
+        }
+        catch (LocationNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (LocationNameAlreadyTakenException exception)
+        {
+            return Conflict(exception.Message);
+        }
     }
 
     [HttpDelete("{id:guid}")]

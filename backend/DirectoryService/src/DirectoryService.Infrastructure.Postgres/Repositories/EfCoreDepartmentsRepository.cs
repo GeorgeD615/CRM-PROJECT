@@ -25,4 +25,18 @@ public sealed class EfCoreDepartmentsRepository : IDepartmentsRepository
         _dbContext.Departments.Add(department);
         _dbContext.DepartmentLocations.AddRange(departmentLocations);
     }
+
+    public Task<DepartmentLocation?> GetDepartmentLocationAsync(
+        DepartmentId departmentId,
+        LocationId locationId,
+        CancellationToken cancellationToken) =>
+        _dbContext.DepartmentLocations.FirstOrDefaultAsync(
+            dl => dl.DepartmentId == departmentId && dl.LocationId == locationId,
+            cancellationToken);
+
+    public void AddDepartmentLocation(DepartmentLocation departmentLocation) =>
+        _dbContext.DepartmentLocations.Add(departmentLocation);
+
+    public void RemoveDepartmentLocation(DepartmentLocation departmentLocation) =>
+        _dbContext.DepartmentLocations.Remove(departmentLocation);
 }

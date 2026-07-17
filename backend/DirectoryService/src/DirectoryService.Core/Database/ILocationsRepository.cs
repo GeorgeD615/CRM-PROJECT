@@ -9,6 +9,11 @@ namespace DirectoryService.Core.Database;
 public interface ILocationsRepository
 {
     /// <summary>
+    /// Возвращает локацию по id или null, если она не найдена.
+    /// </summary>
+    Task<Location?> GetByIdAsync(LocationId id, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Проверяет, занято ли имя локации.
     /// </summary>
     Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
