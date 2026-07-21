@@ -1,5 +1,6 @@
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Locations;
+using DirectoryService.Core.Departments.Exceptions;
+using DirectoryService.Core.Locations.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -9,24 +10,16 @@ namespace DirectoryService.Core.Departments;
 /// <summary>
 /// Сценарий привязки локации к подразделению: проверяет, что обе стороны существуют и связи ещё нет, и создаёт связь.
 /// </summary>
-public sealed class AttachLocationHandler
+public sealed class AttachLocationHandler(
+    IDepartmentsRepository departmentsRepository,
+    ILocationsRepository locationsRepository,
+    ITransactionManager transactionManager,
+    ILogger<AttachLocationHandler> logger)
 {
-    private readonly IDepartmentsRepository _departmentsRepository;
-    private readonly ILocationsRepository _locationsRepository;
-    private readonly ITransactionManager _transactionManager;
-    private readonly ILogger<AttachLocationHandler> _logger;
-
-    public AttachLocationHandler(
-        IDepartmentsRepository departmentsRepository,
-        ILocationsRepository locationsRepository,
-        ITransactionManager transactionManager,
-        ILogger<AttachLocationHandler> logger)
-    {
-        _departmentsRepository = departmentsRepository;
-        _locationsRepository = locationsRepository;
-        _transactionManager = transactionManager;
-        _logger = logger;
-    }
+    private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
+    private readonly ILocationsRepository _locationsRepository = locationsRepository;
+    private readonly ITransactionManager _transactionManager = transactionManager;
+    private readonly ILogger<AttachLocationHandler> _logger = logger;
 
     public async Task HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
     {
@@ -39,14 +32,7 @@ public sealed class AttachLocationHandler
             cancellationToken);
 
         if (existingLink is not null)
-        {
-            _logger.LogWarning(
-                "Location {LocationId} is already attached to department {DepartmentId}.",
-                locationId,
-                departmentId);
-
             throw new DepartmentLocationAlreadyExistsException(departmentId, locationId);
-        }
 
         var link = DepartmentLocation.Create(typedDepartmentId, typedLocationId, isPrimary: false);
 
@@ -69,16 +55,10 @@ public sealed class AttachLocationHandler
         var typedLocationId = LocationId.Create(locationId);
 
         if (await _departmentsRepository.GetByIdAsync(typedDepartmentId, cancellationToken) is null)
-        {
-            _logger.LogWarning("Department {DepartmentId} does not exist.", departmentId);
             throw new DepartmentNotFoundException(departmentId);
-        }
 
         if (await _locationsRepository.GetByIdAsync(typedLocationId, cancellationToken) is null)
-        {
-            _logger.LogWarning("Location {LocationId} does not exist.", locationId);
             throw new LocationNotFoundException(locationId);
-        }
 
         return (typedDepartmentId, typedLocationId);
     }

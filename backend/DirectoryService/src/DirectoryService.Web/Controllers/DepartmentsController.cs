@@ -1,6 +1,5 @@
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Departments;
-using DirectoryService.Core.Locations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
@@ -14,25 +13,15 @@ public sealed class DepartmentsController : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Guid>> Create(
         [FromBody] CreateDepartmentRequest request,
         [FromServices] CreateDepartmentHandler createDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            Guid id = await createDepartmentHandler.HandleAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id }, id);
-        }
-        catch (ParentDepartmentNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
-        catch (LocationsNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
+        Guid id = await createDepartmentHandler.HandleAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 
     [HttpGet]
@@ -52,6 +41,7 @@ public sealed class DepartmentsController : ControllerBase
 
     [HttpPatch("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         [FromRoute] Guid id,
@@ -59,15 +49,8 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] UpdateDepartmentHandler updateDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
-            return NoContent();
-        }
-        catch (DepartmentNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
+        await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpPost("{departmentId:guid}/locations/{locationId:guid}")]
@@ -80,23 +63,8 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] AttachLocationHandler attachLocationHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-            return Created();
-        }
-        catch (DepartmentNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
-        catch (LocationNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
-        catch (DepartmentLocationAlreadyExistsException exception)
-        {
-            return Conflict(exception.Message);
-        }
+        await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+        return Created();
     }
 
     [HttpDelete("{departmentId:guid}/locations/{locationId:guid}")]
@@ -108,15 +76,8 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] DetachLocationHandler detachLocationHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-            return NoContent();
-        }
-        catch (DepartmentLocationNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
+        await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]

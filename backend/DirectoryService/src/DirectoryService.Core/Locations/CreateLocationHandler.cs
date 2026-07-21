@@ -1,5 +1,8 @@
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Database;
+using DirectoryService.Core.Exceptions;
+using DirectoryService.Core.Extensions;
+using DirectoryService.Core.Locations.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using FluentValidation;
@@ -11,25 +14,21 @@ namespace DirectoryService.Core.Locations;
 /// Сценарий создания локации: валидирует запрос, проверяет уникальность имени
 /// и возвращает id созданной локации.
 /// </summary>
-public sealed class CreateLocationHandler
+public sealed class CreateLocationHandler(
+    IValidator<CreateLocationRequest> validator,
+    ILocationsRepository locationsRepository,
+    ILogger<CreateLocationHandler> logger)
 {
-    private readonly IValidator<CreateLocationRequest> _validator;
-    private readonly ILocationsRepository _locationsRepository;
-    private readonly ILogger<CreateLocationHandler> _logger;
-
-    public CreateLocationHandler(
-        IValidator<CreateLocationRequest> validator,
-        ILocationsRepository locationsRepository,
-        ILogger<CreateLocationHandler> logger)
-    {
-        _validator = validator;
-        _locationsRepository = locationsRepository;
-        _logger = logger;
-    }
+    private readonly IValidator<CreateLocationRequest> _validator = validator;
+    private readonly ILocationsRepository _locationsRepository = locationsRepository;
+    private readonly ILogger<CreateLocationHandler> _logger = logger;
 
     public async Task<Guid> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
     {
-        await _validator.ValidateAndThrowAsync(request, cancellationToken);
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+
+        if (!validationResult.IsValid)
+            throw new RequestValidationException(validationResult.ToErrors());
 
         var name = LocationName.Create(request.Name);
         var address = LocationAddress.Create(
@@ -39,11 +38,7 @@ public sealed class CreateLocationHandler
             request.Address.Apartment);
 
         if (await _locationsRepository.IsNameTakenAsync(name, cancellationToken))
-        {
-            _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
-
             throw new LocationNameAlreadyTakenException(name.Value);
-        }
 
         var location = Location.Create(name, address);
         Guid id = location.Id.Value;

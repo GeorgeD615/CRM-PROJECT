@@ -61,11 +61,6 @@ dotnet_diagnostic.S1144.severity = none
 # (изменения внутри jsonb-колонки не меняют схему, миграция только синхронизирует снапшот)
 dotnet_diagnostic.S1186.severity = none
 
-# S2139: «логируй или пробрасывай, но не оба» — репозитории намеренно логируют
-# ошибку сохранения и пробрасывают её дальше: middleware и Result-подход придут позже,
-# а ошибка не должна проходить молча
-dotnet_diagnostic.S2139.severity = none
-
 # CA1848, CA1873: делегаты LoggerMessage и защита от вычисления аргументов —
 # микрооптимизации логгирования, не оправданы на текущем этапе
 dotnet_diagnostic.CA1848.severity = none
@@ -75,3 +70,9 @@ dotnet_diagnostic.CA1873.severity = none
 dotnet_diagnostic.S1125.severity = error  # Redundant Boolean literal
 dotnet_diagnostic.S6673.severity = error  # Serilog template placeholder order
 dotnet_diagnostic.S108.severity  = error  # Пустой catch-блок без комментария
+
+# Разрешение на использование ключевого слова Error
+dotnet_diagnostic.CA1716.severity = none
+
+# Отлов исключение в ExceptionMidleware
+dotnet_diagnostic.CA1031.severity = none
