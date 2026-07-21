@@ -17,10 +17,12 @@ namespace DirectoryService.Core.Locations;
 public sealed class CreateLocationHandler(
     IValidator<CreateLocationRequest> validator,
     ILocationsRepository locationsRepository,
+    ITransactionManager transactionManager,
     ILogger<CreateLocationHandler> logger)
 {
     private readonly IValidator<CreateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
+    private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<CreateLocationHandler> _logger = logger;
 
     public async Task<Guid> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
@@ -43,7 +45,9 @@ public sealed class CreateLocationHandler(
         var location = Location.Create(name, address);
         Guid id = location.Id.Value;
 
-        await _locationsRepository.AddAsync(location, cancellationToken);
+        _locationsRepository.Add(location);
+
+        await _transactionManager.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Location {LocationId} created.", id);
 

@@ -9,4 +9,4 @@ namespace DirectoryService.Core.Locations.Exceptions;
 /// а не некорректный запрос.
 /// </summary>
 public sealed class LocationNameAlreadyTakenException(string name) :
-    ConflictException([Error.Conflict($"Локация с именем '{name}' уже существует.")]);
+    ConflictException([Error.Conflict($"Локация с именем '{name}' уже существует.", code: "directory.location.name_conflict")]);

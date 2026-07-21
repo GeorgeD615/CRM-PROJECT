@@ -7,4 +7,6 @@ namespace DirectoryService.Core.Departments.Exceptions;
 /// Нарушение бизнес-правила: связи между подразделением и локацией не существует.
 /// </summary>
 public sealed class DepartmentLocationNotFoundException(Guid departmentId, Guid locationId) :
-    NotFoundException([Error.NotFound($"Связь подразделения '{departmentId}' с локацией '{locationId}' не найдена.")]);
+    NotFoundException([Error.NotFound(
+        $"Связь подразделения '{departmentId}' с локацией '{locationId}' не найдена.",
+        code: "directory.department_location.not_found")]);

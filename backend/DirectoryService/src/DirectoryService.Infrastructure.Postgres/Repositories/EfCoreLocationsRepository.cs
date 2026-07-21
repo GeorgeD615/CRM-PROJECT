@@ -26,9 +26,5 @@ public sealed class EfCoreLocationsRepository(AppDbContext dbContext) : ILocatio
             .Select(l => l.Id)
             .ToArrayAsync(cancellationToken);
 
-    public async Task AddAsync(Location location, CancellationToken cancellationToken)
-    {
-        _dbContext.Locations.Add(location);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
+    public void Add(Location location) => _dbContext.Locations.Add(location);
 }

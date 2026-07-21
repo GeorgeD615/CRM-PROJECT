@@ -8,4 +8,6 @@ namespace DirectoryService.Core.Departments.Exceptions;
 /// Подразделение не создаётся, пока все локации из запроса не найдены.
 /// </summary>
 public sealed class LocationsNotFoundException(IReadOnlyCollection<Guid> locationIds) :
-    NotFoundException([.. locationIds.Select(locationId => Error.NotFound($"Локация '{locationId}' не найдена."))]);
+    NotFoundException([.. locationIds.Select(locationId => Error.NotFound(
+        $"Локация '{locationId}' не найдена.",
+        code: "directory.location.not_found"))]);

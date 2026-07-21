@@ -8,4 +8,6 @@ namespace DirectoryService.Core.Departments.Exceptions;
 /// Создание дочернего подразделения без родителя невозможно — операция отклоняется целиком.
 /// </summary>
 public sealed class ParentDepartmentNotFoundException(Guid parentId) :
-    NotFoundException([Error.NotFound($"Родительское подразделение '{parentId}' не найдено.")]);
+    NotFoundException([Error.NotFound(
+        $"Родительское подразделение '{parentId}' не найдено.",
+        code: "directory.department.parent_not_found")]);

@@ -7,4 +7,4 @@ namespace DirectoryService.Core.Departments.Exceptions;
 /// Нарушение бизнес-правила: подразделение с указанным id не существует.
 /// </summary>
 public sealed class DepartmentNotFoundException(Guid departmentId) :
-    NotFoundException([Error.NotFound($"Подразделение '{departmentId}' не найдено.")]);
+    NotFoundException([Error.NotFound($"Подразделение '{departmentId}' не найдено.", code: "directory.department.not_found")]);
