@@ -19,9 +19,9 @@ public interface ILocationsRepository
     Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Добавляет новую локацию и сохраняет изменения.
+    /// Добавляет новую локацию.
     /// </summary>
-    Task AddAsync(Location location, CancellationToken cancellationToken);
+    void Add(Location location);
 
     /// <summary>
     /// Возвращает те из переданных id, для которых локация существует.

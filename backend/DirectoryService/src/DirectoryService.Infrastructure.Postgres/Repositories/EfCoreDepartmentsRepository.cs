@@ -8,14 +8,9 @@ namespace DirectoryService.Infrastructure.Postgres.Repositories;
 /// <summary>
 /// Хранилище подразделений на EF Core: работает через <see cref="AppDbContext"/>.
 /// </summary>
-public sealed class EfCoreDepartmentsRepository : IDepartmentsRepository
+public sealed class EfCoreDepartmentsRepository(AppDbContext dbContext) : IDepartmentsRepository
 {
-    private readonly AppDbContext _dbContext;
-
-    public EfCoreDepartmentsRepository(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly AppDbContext _dbContext = dbContext;
 
     public Task<Department?> GetByIdAsync(DepartmentId id, CancellationToken cancellationToken) =>
         _dbContext.Departments.FirstOrDefaultAsync(d => d.Id == id, cancellationToken);

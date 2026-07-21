@@ -1,4 +1,5 @@
 using DirectoryService.Web;
+using DirectoryService.Web.Middlewares;
 using Scalar.AspNetCore;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,8 @@ builder.Host.UseDefaultServiceProvider(options =>
 });
 
 WebApplication app = builder.Build();
+
+app.UseExceptionMiddleware();
 
 app.MapHealthChecks("/api/health");
 

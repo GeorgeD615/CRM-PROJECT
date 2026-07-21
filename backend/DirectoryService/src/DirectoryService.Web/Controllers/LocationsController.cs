@@ -13,21 +13,15 @@ public sealed class LocationsController : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Guid>> Create(
         [FromBody] CreateLocationRequest request,
         [FromServices] CreateLocationHandler createLocationHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            Guid id = await createLocationHandler.HandleAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id }, id);
-        }
-        catch (LocationNameAlreadyTakenException exception)
-        {
-            return Conflict(exception.Message);
-        }
+        Guid id = await createLocationHandler.HandleAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 
     [HttpGet]
@@ -47,6 +41,7 @@ public sealed class LocationsController : ControllerBase
 
     [HttpPatch("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
@@ -55,19 +50,8 @@ public sealed class LocationsController : ControllerBase
         [FromServices] UpdateLocationHandler updateLocationHandler,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await updateLocationHandler.HandleAsync(id, request, cancellationToken);
-            return NoContent();
-        }
-        catch (LocationNotFoundException exception)
-        {
-            return NotFound(exception.Message);
-        }
-        catch (LocationNameAlreadyTakenException exception)
-        {
-            return Conflict(exception.Message);
-        }
+        await updateLocationHandler.HandleAsync(id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]

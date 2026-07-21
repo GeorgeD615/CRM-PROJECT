@@ -1,4 +1,5 @@
 using DirectoryService.Core.Database;
+using DirectoryService.Core.Departments.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -8,21 +9,14 @@ namespace DirectoryService.Core.Departments;
 /// <summary>
 /// Сценарий отвязки локации от подразделения: удаляет существующую связь.
 /// </summary>
-public sealed class DetachLocationHandler
+public sealed class DetachLocationHandler(
+    IDepartmentsRepository departmentsRepository,
+    ITransactionManager transactionManager,
+    ILogger<DetachLocationHandler> logger)
 {
-    private readonly IDepartmentsRepository _departmentsRepository;
-    private readonly ITransactionManager _transactionManager;
-    private readonly ILogger<DetachLocationHandler> _logger;
-
-    public DetachLocationHandler(
-        IDepartmentsRepository departmentsRepository,
-        ITransactionManager transactionManager,
-        ILogger<DetachLocationHandler> logger)
-    {
-        _departmentsRepository = departmentsRepository;
-        _transactionManager = transactionManager;
-        _logger = logger;
-    }
+    private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
+    private readonly ITransactionManager _transactionManager = transactionManager;
+    private readonly ILogger<DetachLocationHandler> _logger = logger;
 
     public async Task HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
     {
@@ -32,14 +26,7 @@ public sealed class DetachLocationHandler
             cancellationToken);
 
         if (link is null)
-        {
-            _logger.LogWarning(
-                "Link between department {DepartmentId} and location {LocationId} does not exist.",
-                departmentId,
-                locationId);
-
             throw new DepartmentLocationNotFoundException(departmentId, locationId);
-        }
 
         _departmentsRepository.RemoveDepartmentLocation(link);
 
