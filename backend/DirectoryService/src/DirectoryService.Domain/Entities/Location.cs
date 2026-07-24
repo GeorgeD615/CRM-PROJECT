@@ -1,4 +1,6 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -36,27 +38,42 @@ public sealed class Location
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static Location Create(LocationName name, LocationAddress address)
+    public static Result<Location, Failure> Create(LocationName name, LocationAddress address)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(address);
+        var errors = new List<Error>();
 
-        return new Location(LocationId.Create(Guid.CreateVersion7()), name, address);
+        if (name is null)
+            errors.Add(Error.Validation("Имя локации обязательно.", nameof(name)));
+
+        if (address is null)
+            errors.Add(Error.Validation("Адрес локации обязателен.", nameof(address)));
+
+        if (errors.Count > 0)
+            return new Failure(errors);
+
+        // Проверки выше гарантируют, что оба значения не null, когда список ошибок пуст.
+        return new Location(LocationId.Create(Guid.CreateVersion7()), name!, address!);
     }
 
-    public void Rename(LocationName name)
+    public UnitResult<Failure> Rename(LocationName name)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        if (name is null)
+            return Failure.From(Error.Validation("Имя локации обязательно.", nameof(name)));
 
         Name = name;
         UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Failure>();
     }
 
-    public void ChangeAddress(LocationAddress address)
+    public UnitResult<Failure> ChangeAddress(LocationAddress address)
     {
-        ArgumentNullException.ThrowIfNull(address);
+        if (address is null)
+            return Failure.From(Error.Validation("Адрес локации обязателен.", nameof(address)));
 
         Address = address;
         UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Failure>();
     }
 }

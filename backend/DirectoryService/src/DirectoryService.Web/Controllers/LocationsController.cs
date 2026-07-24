@@ -1,5 +1,6 @@
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Locations;
+using DirectoryService.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
@@ -15,13 +16,16 @@ public sealed class LocationsController : ControllerBase
     [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<Guid>> Create(
+    public async Task<IActionResult> Create(
         [FromBody] CreateLocationRequest request,
         [FromServices] CreateLocationHandler createLocationHandler,
         CancellationToken cancellationToken)
     {
-        Guid id = await createLocationHandler.HandleAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id }, id);
+        var result = await createLocationHandler.HandleAsync(request, cancellationToken);
+
+        return result.IsFailure
+            ? result.Error.ToResponse()
+            : CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
     }
 
     [HttpGet]
@@ -50,8 +54,9 @@ public sealed class LocationsController : ControllerBase
         [FromServices] UpdateLocationHandler updateLocationHandler,
         CancellationToken cancellationToken)
     {
-        await updateLocationHandler.HandleAsync(id, request, cancellationToken);
-        return NoContent();
+        var result = await updateLocationHandler.HandleAsync(id, request, cancellationToken);
+
+        return result.IsFailure ? result.Error.ToResponse() : NoContent();
     }
 
     [HttpDelete("{id:guid}")]

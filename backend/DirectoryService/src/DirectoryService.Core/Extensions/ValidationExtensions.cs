@@ -8,6 +8,11 @@ namespace DirectoryService.Core.Extensions;
 /// </summary>
 public static class ValidationExtensions
 {
-    public static Error[] ToErrors(this ValidationResult validationResult) =>
-        [.. validationResult.Errors.Select(failure => Error.Validation(failure.ErrorMessage, failure.PropertyName, failure.ErrorCode))];
+    public static Failure ToErrors(this ValidationResult validationResult)
+    {
+        Error[] errors =
+            [.. validationResult.Errors.Select(failure => Error.Validation(failure.ErrorMessage, failure.PropertyName, failure.ErrorCode))];
+
+        return errors;
+    }
 }

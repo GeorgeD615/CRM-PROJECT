@@ -1,5 +1,7 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Core.Database;
 
@@ -9,19 +11,19 @@ namespace DirectoryService.Core.Database;
 public interface IDepartmentsRepository
 {
     /// <summary>
-    /// Возвращает подразделение по id или null, если оно не найдено.
+    /// Возвращает подразделение по id; <see cref="ErrorType.NotFound"/>, если оно не найдено.
     /// </summary>
-    Task<Department?> GetByIdAsync(DepartmentId id, CancellationToken cancellationToken);
+    Task<Result<Department, Failure>> GetByIdAsync(DepartmentId id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Добавляет подразделение вместе с его связями с локациями.
     /// </summary>
-    void Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
+    UnitResult<Failure> Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
 
     /// <summary>
-    /// Возвращает связь подразделения с локацией или null, если связи нет.
+    /// Возвращает связь подразделения с локацией; <see cref="ErrorType.NotFound"/>, если связи нет.
     /// </summary>
-    Task<DepartmentLocation?> GetDepartmentLocationAsync(
+    Task<Result<DepartmentLocation, Failure>> GetDepartmentLocationAsync(
         DepartmentId departmentId,
         LocationId locationId,
         CancellationToken cancellationToken);
@@ -29,10 +31,10 @@ public interface IDepartmentsRepository
     /// <summary>
     /// Добавляет связь подразделения с локацией.
     /// </summary>
-    void AddDepartmentLocation(DepartmentLocation departmentLocation);
+    UnitResult<Failure> AddDepartmentLocation(DepartmentLocation departmentLocation);
 
     /// <summary>
     /// Удаляет связь подразделения с локацией.
     /// </summary>
-    void RemoveDepartmentLocation(DepartmentLocation departmentLocation);
+    UnitResult<Failure> RemoveDepartmentLocation(DepartmentLocation departmentLocation);
 }

@@ -1,5 +1,7 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Core.Database;
 
@@ -9,24 +11,24 @@ namespace DirectoryService.Core.Database;
 public interface ILocationsRepository
 {
     /// <summary>
-    /// Возвращает локацию по id или null, если она не найдена.
+    /// Возвращает локацию по id; <see cref="ErrorType.NotFound"/>, если она не найдена.
     /// </summary>
-    Task<Location?> GetByIdAsync(LocationId id, CancellationToken cancellationToken);
+    Task<Result<Location, Failure>> GetByIdAsync(LocationId id, CancellationToken cancellationToken);
 
     /// <summary>
     /// Проверяет, занято ли имя локации.
     /// </summary>
-    Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
+    Task<Result<bool, Failure>> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
 
     /// <summary>
     /// Добавляет новую локацию.
     /// </summary>
-    void Add(Location location);
+    UnitResult<Failure> Add(Location location);
 
     /// <summary>
     /// Возвращает те из переданных id, для которых локация существует.
     /// </summary>
-    Task<IReadOnlyCollection<LocationId>> GetExistingIdsAsync(
+    Task<Result<IReadOnlyCollection<LocationId>, Failure>> GetExistingIdsAsync(
         IReadOnlyCollection<LocationId> locationIds,
         CancellationToken cancellationToken);
 }
