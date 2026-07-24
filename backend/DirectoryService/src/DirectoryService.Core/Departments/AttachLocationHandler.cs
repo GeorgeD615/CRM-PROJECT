@@ -1,65 +1,61 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Departments.Exceptions;
-using DirectoryService.Core.Locations.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
-using Microsoft.Extensions.Logging;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Core.Departments;
 
 /// <summary>
 /// Сценарий привязки локации к подразделению: проверяет, что обе стороны существуют и связи ещё нет, и создаёт связь.
+/// Не бросает и не логирует — все ошибки возвращаются как результат.
 /// </summary>
 public sealed class AttachLocationHandler(
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager,
-    ILogger<AttachLocationHandler> logger)
+    ITransactionManager transactionManager)
 {
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
-    private readonly ILogger<AttachLocationHandler> _logger = logger;
 
-    public async Task HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
-    {
-        (DepartmentId typedDepartmentId, LocationId typedLocationId) =
-            await EnsureDepartmentAndLocationExistAsync(departmentId, locationId, cancellationToken);
-
-        DepartmentLocation? existingLink = await _departmentsRepository.GetDepartmentLocationAsync(
-            typedDepartmentId,
-            typedLocationId,
-            cancellationToken);
-
-        if (existingLink is not null)
-            throw new DepartmentLocationAlreadyExistsException(departmentId, locationId);
-
-        var link = DepartmentLocation.Create(typedDepartmentId, typedLocationId, isPrimary: false);
-
-        _departmentsRepository.AddDepartmentLocation(link);
-
-        await _transactionManager.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation(
-            "Location {LocationId} attached to department {DepartmentId}.",
-            locationId,
-            departmentId);
-    }
-
-    private async Task<(DepartmentId DepartmentId, LocationId LocationId)> EnsureDepartmentAndLocationExistAsync(
-        Guid departmentId,
-        Guid locationId,
-        CancellationToken cancellationToken)
+    public async Task<UnitResult<Failure>> HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
     {
         var typedDepartmentId = DepartmentId.Create(departmentId);
         var typedLocationId = LocationId.Create(locationId);
 
-        if (await _departmentsRepository.GetByIdAsync(typedDepartmentId, cancellationToken) is null)
-            throw new DepartmentNotFoundException(departmentId);
+        Result<Department, Failure> departmentResult =
+            await _departmentsRepository.GetByIdAsync(typedDepartmentId, cancellationToken);
+        if (departmentResult.IsFailure)
+            return departmentResult.Error;
 
-        if (await _locationsRepository.GetByIdAsync(typedLocationId, cancellationToken) is null)
-            throw new LocationNotFoundException(locationId);
+        Result<Location, Failure> locationResult =
+            await _locationsRepository.GetByIdAsync(typedLocationId, cancellationToken);
+        if (locationResult.IsFailure)
+            return locationResult.Error;
 
-        return (typedDepartmentId, typedLocationId);
+        Result<DepartmentLocation, Failure> existingLinkResult = await _departmentsRepository.GetDepartmentLocationAsync(
+            typedDepartmentId,
+            typedLocationId,
+            cancellationToken);
+
+        if (existingLinkResult.IsSuccess)
+            return Failure.From(Error.Conflict(
+                $"Локация '{locationId}' уже привязана к подразделению '{departmentId}'.",
+                code: "directory.department_location.conflict"));
+
+        // «Связь не найдена» — ожидаемый путь; настоящую ошибку БД пробрасываем наверх.
+        if (existingLinkResult.Error.Any(error => error.Type != ErrorType.NotFound))
+            return existingLinkResult.Error;
+
+        var link = DepartmentLocation.Create(typedDepartmentId, typedLocationId, isPrimary: false);
+
+        UnitResult<Failure> addResult = _departmentsRepository.AddDepartmentLocation(link);
+        if (addResult.IsFailure)
+            return addResult.Error;
+
+        await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        return UnitResult.Success<Failure>();
     }
 }

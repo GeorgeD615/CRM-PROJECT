@@ -1,40 +1,37 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Departments.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
-using Microsoft.Extensions.Logging;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Core.Departments;
 
 /// <summary>
 /// Сценарий отвязки локации от подразделения: удаляет существующую связь.
+/// Не бросает и не логирует — все ошибки возвращаются как результат.
 /// </summary>
 public sealed class DetachLocationHandler(
     IDepartmentsRepository departmentsRepository,
-    ITransactionManager transactionManager,
-    ILogger<DetachLocationHandler> logger)
+    ITransactionManager transactionManager)
 {
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
-    private readonly ILogger<DetachLocationHandler> _logger = logger;
 
-    public async Task HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
+    public async Task<UnitResult<Failure>> HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
     {
-        DepartmentLocation? link = await _departmentsRepository.GetDepartmentLocationAsync(
+        Result<DepartmentLocation, Failure> linkResult = await _departmentsRepository.GetDepartmentLocationAsync(
             DepartmentId.Create(departmentId),
             LocationId.Create(locationId),
             cancellationToken);
+        if (linkResult.IsFailure)
+            return linkResult.Error;
 
-        if (link is null)
-            throw new DepartmentLocationNotFoundException(departmentId, locationId);
-
-        _departmentsRepository.RemoveDepartmentLocation(link);
+        UnitResult<Failure> removeResult = _departmentsRepository.RemoveDepartmentLocation(linkResult.Value);
+        if (removeResult.IsFailure)
+            return removeResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation(
-            "Location {LocationId} detached from department {DepartmentId}.",
-            locationId,
-            departmentId);
+        return UnitResult.Success<Failure>();
     }
 }

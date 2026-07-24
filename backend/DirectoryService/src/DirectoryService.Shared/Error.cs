@@ -24,6 +24,8 @@ public sealed class Error
 
     public string? InvalidProperty { get; }
 
+    public static Error None => new(string.Empty, string.Empty, ErrorType.None, null);
+
     public static Error Validation(string message, string? invalidProperty = null, string? code = null) =>
         new(code ?? "value.is.invalid", message, ErrorType.Validation, invalidProperty);
 

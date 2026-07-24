@@ -1,36 +1,34 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Exceptions;
 using DirectoryService.Core.Extensions;
-using DirectoryService.Core.Locations.Exceptions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 using FluentValidation;
-using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Locations;
 
 /// <summary>
 /// Сценарий создания локации: валидирует запрос, проверяет уникальность имени
-/// и возвращает id созданной локации.
+/// и возвращает id созданной локации либо <see cref="Failure"/>. Не бросает и не логирует —
+/// все ошибки возвращаются как результат.
 /// </summary>
 public sealed class CreateLocationHandler(
     IValidator<CreateLocationRequest> validator,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager,
-    ILogger<CreateLocationHandler> logger)
+    ITransactionManager transactionManager)
 {
     private readonly IValidator<CreateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
-    private readonly ILogger<CreateLocationHandler> _logger = logger;
 
-    public async Task<Guid> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Guid, Failure>> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new RequestValidationException(validationResult.ToErrors());
+            return validationResult.ToErrors();
 
         var name = LocationName.Create(request.Name);
         var address = LocationAddress.Create(
@@ -39,18 +37,25 @@ public sealed class CreateLocationHandler(
             request.Address.House,
             request.Address.Apartment);
 
-        if (await _locationsRepository.IsNameTakenAsync(name, cancellationToken))
-            throw new LocationNameAlreadyTakenException(name.Value);
+        Result<bool, Failure> isNameTakenResult = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
+        if (isNameTakenResult.IsFailure)
+            return isNameTakenResult.Error;
 
-        var location = Location.Create(name, address);
-        Guid id = location.Id.Value;
+        if (isNameTakenResult.Value)
+            return Failure.From(Error.Conflict($"Локация с именем '{name.Value}' уже существует.", code: "directory.location.name_conflict"));
 
-        _locationsRepository.Add(location);
+        Result<Location, Failure> locationResult = Location.Create(name, address);
+        if (locationResult.IsFailure)
+            return locationResult.Error;
+
+        Location location = locationResult.Value;
+
+        UnitResult<Failure> addResult = _locationsRepository.Add(location);
+        if (addResult.IsFailure)
+            return addResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Location {LocationId} created.", id);
-
-        return id;
+        return location.Id.Value;
     }
 }

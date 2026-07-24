@@ -1,4 +1,6 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -41,38 +43,61 @@ public sealed class Department
 
     public bool IsRoot => ParentId is null;
 
-    public static Department CreateRoot(DepartmentName name, DepartmentSlug slug)
+    public static Result<Department, Failure> CreateRoot(DepartmentName name, DepartmentSlug slug)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(slug);
+        var errors = new List<Error>();
 
+        if (name is null)
+            errors.Add(Error.Validation("Имя подразделения обязательно.", nameof(name)));
+
+        if (slug is null)
+            errors.Add(Error.Validation("Slug подразделения обязателен.", nameof(slug)));
+
+        if (errors.Count > 0)
+            return new Failure(errors);
+
+        // Проверки выше гарантируют, что оба значения не null, когда список ошибок пуст.
         return new Department(
             DepartmentId.Create(Guid.CreateVersion7()),
-            name,
-            slug,
-            DepartmentPath.CreateRoot(slug),
+            name!,
+            slug!,
+            DepartmentPath.CreateRoot(slug!),
             parentId: null);
     }
 
-    public static Department CreateChild(DepartmentName name, DepartmentSlug slug, Department parent)
+    public static Result<Department, Failure> CreateChild(DepartmentName name, DepartmentSlug slug, Department parent)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(slug);
-        ArgumentNullException.ThrowIfNull(parent);
+        var errors = new List<Error>();
 
+        if (name is null)
+            errors.Add(Error.Validation("Имя подразделения обязательно.", nameof(name)));
+
+        if (slug is null)
+            errors.Add(Error.Validation("Slug подразделения обязателен.", nameof(slug)));
+
+        if (parent is null)
+            errors.Add(Error.Validation("Родительское подразделение обязательно.", nameof(parent)));
+
+        if (errors.Count > 0)
+            return new Failure(errors);
+
+        // Проверки выше гарантируют, что значения не null, когда список ошибок пуст.
         return new Department(
             DepartmentId.Create(Guid.CreateVersion7()),
-            name,
-            slug,
-            parent.Path.CreateChild(slug),
+            name!,
+            slug!,
+            parent!.Path.CreateChild(slug!),
             parent.Id);
     }
 
-    public void Rename(DepartmentName name)
+    public UnitResult<Failure> Rename(DepartmentName name)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        if (name is null)
+            return Failure.From(Error.Validation("Имя подразделения обязательно.", nameof(name)));
 
         Name = name;
         UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Failure>();
     }
 }

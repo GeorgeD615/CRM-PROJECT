@@ -6,6 +6,11 @@ namespace DirectoryService.Shared;
 public enum ErrorType
 {
     /// <summary>
+    /// Отсутствие ошибки
+    /// </summary>
+    None = 0,
+
+    /// <summary>
     /// Ошибка валидации
     /// </summary>
     Validation,

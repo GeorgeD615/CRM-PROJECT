@@ -1,39 +1,37 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Departments.Exceptions;
-using DirectoryService.Core.Exceptions;
 using DirectoryService.Core.Extensions;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 using FluentValidation;
-using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Departments;
 
 /// <summary>
 /// Сценарий создания подразделения: проверяет существование родителя и локаций,
 /// строит доменную модель с путём из slug'ов и атомарно сохраняет подразделение
-/// вместе с его первичными связями с локациями.
+/// вместе с его первичными связями с локациями. Не бросает и не логирует —
+/// все ошибки возвращаются как результат.
 /// </summary>
 public sealed class CreateDepartmentHandler(
     IValidator<CreateDepartmentRequest> validator,
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager,
-    ILogger<CreateDepartmentHandler> logger)
+    ITransactionManager transactionManager)
 {
     private readonly IValidator<CreateDepartmentRequest> _validator = validator;
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
-    private readonly ILogger<CreateDepartmentHandler> _logger = logger;
 
-    public async Task<Guid> HandleAsync(CreateDepartmentRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Guid, Failure>> HandleAsync(CreateDepartmentRequest request, CancellationToken cancellationToken)
     {
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)
-            throw new RequestValidationException(validationResult.ToErrors());
+            return validationResult.ToErrors();
 
         var name = DepartmentName.Create(request.Name);
         var slug = DepartmentSlug.Create(request.Slug);
@@ -42,54 +40,81 @@ public sealed class CreateDepartmentHandler(
             .Distinct()
             .Select(LocationId.Create)];
 
-        await EnsureLocationsExistAsync(locationIds, cancellationToken);
+        UnitResult<Failure> ensureLocationsResult = await EnsureLocationsExistAsync(locationIds, cancellationToken);
+        if (ensureLocationsResult.IsFailure)
+            return ensureLocationsResult.Error;
 
-        Department department = request.ParentId is { } parentId
-            ? Department.CreateChild(name, slug, await GetParentAsync(parentId, cancellationToken))
-            : Department.CreateRoot(name, slug);
+        Result<Department, Failure> departmentResult;
+        if (request.ParentId is { } parentId)
+        {
+            Result<Department, Failure> parentResult = await GetParentAsync(parentId, cancellationToken);
+            if (parentResult.IsFailure)
+                return parentResult.Error;
+
+            departmentResult = Department.CreateChild(name, slug, parentResult.Value);
+        }
+        else
+        {
+            departmentResult = Department.CreateRoot(name, slug);
+        }
+
+        if (departmentResult.IsFailure)
+            return departmentResult.Error;
+
+        Department department = departmentResult.Value;
 
         DepartmentLocation[] departmentLocations = [.. locationIds.Select(locationId =>
             DepartmentLocation.Create(department.Id, locationId, isPrimary: false))];
 
-        _departmentsRepository.Add(department, departmentLocations);
+        UnitResult<Failure> addResult = _departmentsRepository.Add(department, departmentLocations);
+        if (addResult.IsFailure)
+            return addResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation(
-            "Department {DepartmentId} created with path {DepartmentPath} and {LocationCount} locations.",
-            department.Id.Value,
-            department.Path.Value,
-            departmentLocations.Length);
 
         return department.Id.Value;
     }
 
-    private async Task EnsureLocationsExistAsync(
+    private async Task<UnitResult<Failure>> EnsureLocationsExistAsync(
         IReadOnlyCollection<LocationId> locationIds,
         CancellationToken cancellationToken)
     {
         if (locationIds.Count == 0)
-            return;
+            return UnitResult.Success<Failure>();
 
-        IReadOnlyCollection<LocationId> existingIds =
+        Result<IReadOnlyCollection<LocationId>, Failure> existingIdsResult =
             await _locationsRepository.GetExistingIdsAsync(locationIds, cancellationToken);
+        if (existingIdsResult.IsFailure)
+            return existingIdsResult.Error;
 
         Guid[] missingIds = [.. locationIds
-            .Except(existingIds)
+            .Except(existingIdsResult.Value)
             .Select(id => id.Value)];
 
         if (missingIds.Length == 0)
-            return;
+            return UnitResult.Success<Failure>();
 
-        throw new LocationsNotFoundException(missingIds);
+        Error[] errors = [.. missingIds.Select(locationId => Error.NotFound(
+            $"Локация '{locationId}' не найдена.",
+            code: "directory.location.not_found"))];
+
+        return new Failure(errors);
     }
 
-    private async Task<Department> GetParentAsync(Guid parentId, CancellationToken cancellationToken)
+    private async Task<Result<Department, Failure>> GetParentAsync(Guid parentId, CancellationToken cancellationToken)
     {
-        Department? parent = await _departmentsRepository.GetByIdAsync(
-            DepartmentId.Create(parentId),
-            cancellationToken);
+        Result<Department, Failure> parentResult =
+            await _departmentsRepository.GetByIdAsync(DepartmentId.Create(parentId), cancellationToken);
 
-        return parent is null ? throw new ParentDepartmentNotFoundException(parentId) : parent;
+        if (parentResult.IsSuccess)
+            return parentResult;
+
+        // Инфраструктурную ошибку пробрасываем как есть; «не найдено» уточняем до родителя.
+        if (parentResult.Error.Any(error => error.Type != ErrorType.NotFound))
+            return parentResult;
+
+        return Failure.From(Error.NotFound(
+            $"Родительское подразделение '{parentId}' не найдено.",
+            code: "directory.department.parent_not_found"));
     }
 }

@@ -1,4 +1,6 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -24,18 +26,22 @@ public sealed class Position
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static Position Create(PositionName name)
+    public static Result<Position, Failure> Create(PositionName name)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        if (name is null)
+            return Failure.From(Error.Validation("Имя должности обязательно.", nameof(name)));
 
         return new Position(PositionId.Create(Guid.CreateVersion7()), name);
     }
 
-    public void Rename(PositionName name)
+    public UnitResult<Failure> Rename(PositionName name)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        if (name is null)
+            return Failure.From(Error.Validation("Имя должности обязательно.", nameof(name)));
 
         Name = name;
         UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Failure>();
     }
 }

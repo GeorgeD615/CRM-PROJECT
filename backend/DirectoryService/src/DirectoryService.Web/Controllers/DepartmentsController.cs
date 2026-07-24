@@ -1,5 +1,6 @@
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Departments;
+using DirectoryService.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
@@ -15,13 +16,16 @@ public sealed class DepartmentsController : ControllerBase
     [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Guid>> Create(
+    public async Task<IActionResult> Create(
         [FromBody] CreateDepartmentRequest request,
         [FromServices] CreateDepartmentHandler createDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        Guid id = await createDepartmentHandler.HandleAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id }, id);
+        var result = await createDepartmentHandler.HandleAsync(request, cancellationToken);
+
+        return result.IsFailure
+            ? result.Error.ToResponse()
+            : CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
     }
 
     [HttpGet]
@@ -49,8 +53,9 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] UpdateDepartmentHandler updateDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
-        return NoContent();
+        var result = await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
+
+        return result.IsFailure ? result.Error.ToResponse() : NoContent();
     }
 
     [HttpPost("{departmentId:guid}/locations/{locationId:guid}")]
@@ -63,8 +68,9 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] AttachLocationHandler attachLocationHandler,
         CancellationToken cancellationToken)
     {
-        await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-        return Created();
+        var result = await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+
+        return result.IsFailure ? result.Error.ToResponse() : Created();
     }
 
     [HttpDelete("{departmentId:guid}/locations/{locationId:guid}")]
@@ -76,8 +82,9 @@ public sealed class DepartmentsController : ControllerBase
         [FromServices] DetachLocationHandler detachLocationHandler,
         CancellationToken cancellationToken)
     {
-        await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-        return NoContent();
+        var result = await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
+
+        return result.IsFailure ? result.Error.ToResponse() : NoContent();
     }
 
     [HttpDelete("{id:guid}")]
