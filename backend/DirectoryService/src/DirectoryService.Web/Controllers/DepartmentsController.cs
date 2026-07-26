@@ -1,97 +1,95 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Departments;
-using DirectoryService.Web.Extensions;
+using DirectoryService.Shared;
+using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// API подразделений. Создание делегируется в Core, остальные операции — заглушки до следующих задач.
+/// API подразделений. Создание, обновление и связи с локациями делегируются в Core,
+/// чтение — заглушки до следующих задач.
 /// </summary>
 [ApiController]
 [Route("api/departments")]
 public sealed class DepartmentsController : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Create(
+    [ProducesResponseType<Envelope<Guid>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public async Task<EndpointResult<Guid>> Create(
         [FromBody] CreateDepartmentRequest request,
         [FromServices] CreateDepartmentHandler createDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        var result = await createDepartmentHandler.HandleAsync(request, cancellationToken);
-
-        return result.IsFailure
-            ? result.Error.ToResponse()
-            : CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
+        return EndpointResult<Guid>.Created(await createDepartmentHandler.HandleAsync(request, cancellationToken));
     }
 
     [HttpGet]
-    [ProducesResponseType<IReadOnlyCollection<DepartmentResponse>>(StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyCollection<DepartmentResponse>> GetAll()
+    [ProducesResponseType<Envelope<IReadOnlyCollection<DepartmentResponse>>>(StatusCodes.Status200OK)]
+    public EndpointResult<IReadOnlyCollection<DepartmentResponse>> GetAll()
     {
-        return Ok(Array.Empty<DepartmentResponse>());
+        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
+        IReadOnlyCollection<DepartmentResponse> departments = [];
+        return Result.Success<IReadOnlyCollection<DepartmentResponse>, Failure>(departments);
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType<DepartmentResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<DepartmentResponse> GetById([FromRoute] Guid id)
+    [ProducesResponseType<Envelope<DepartmentResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public EndpointResult<DepartmentResponse> GetById([FromRoute] Guid id)
     {
-        return NotFound();
+        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
+        return Result.Failure<DepartmentResponse, Failure>(
+            Error.NotFound($"Подразделение '{id}' не найдено.", code: "directory.department.not_found"));
     }
 
     [HttpPatch("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public async Task<EndpointResult> Update(
         [FromRoute] Guid id,
         [FromBody] UpdateDepartmentRequest request,
         [FromServices] UpdateDepartmentHandler updateDepartmentHandler,
         CancellationToken cancellationToken)
     {
-        var result = await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
-
-        return result.IsFailure ? result.Error.ToResponse() : NoContent();
+        return await updateDepartmentHandler.HandleAsync(id, request, cancellationToken);
     }
 
     [HttpPost("{departmentId:guid}/locations/{locationId:guid}")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> AttachLocation(
+    [ProducesResponseType<Envelope>(StatusCodes.Status201Created)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> AttachLocation(
         [FromRoute] Guid departmentId,
         [FromRoute] Guid locationId,
         [FromServices] AttachLocationHandler attachLocationHandler,
         CancellationToken cancellationToken)
     {
-        var result = await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-
-        return result.IsFailure ? result.Error.ToResponse() : Created();
+        return EndpointResult.Created(await attachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken));
     }
 
     [HttpDelete("{departmentId:guid}/locations/{locationId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DetachLocation(
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public async Task<EndpointResult> DetachLocation(
         [FromRoute] Guid departmentId,
         [FromRoute] Guid locationId,
         [FromServices] DetachLocationHandler detachLocationHandler,
         CancellationToken cancellationToken)
     {
-        var result = await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
-
-        return result.IsFailure ? result.Error.ToResponse() : NoContent();
+        return await detachLocationHandler.HandleAsync(departmentId, locationId, cancellationToken);
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Delete([FromRoute] Guid id)
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public EndpointResult Delete([FromRoute] Guid id)
     {
-        return NoContent();
+        // Заглушка: удаление ещё не реализовано (нет команды).
+        return UnitResult.Success<Failure>();
     }
 }

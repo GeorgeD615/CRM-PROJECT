@@ -74,5 +74,11 @@ dotnet_diagnostic.S108.severity  = error  # Пустой catch-блок без �
 # Разрешение на использование ключевого слова Error
 dotnet_diagnostic.CA1716.severity = none
 
-# Отлов исключение в ExceptionMidleware
+# Отлов исключений в ExceptionMidleware
 dotnet_diagnostic.CA1031.severity = none
+
+# Статический метод в дженерике
+dotnet_diagnostic.CA1000.severity = none
+
+# Implicit оператор
+dotnet_diagnostic.CA2225.severity = none

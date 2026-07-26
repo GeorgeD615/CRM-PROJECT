@@ -1,53 +1,62 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Positions;
+using DirectoryService.Shared;
+using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// Заглушка API должностей: контракты и коды ответов настоящие, реализация придёт в следующих задачах.
+/// Заглушка API должностей: контракты, коды ответов и Envelope-форма настоящие,
+/// доменная реализация (Core) придёт в следующих задачах.
 /// </summary>
 [ApiController]
 [Route("api/positions")]
 public sealed class PositionsController : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<PositionResponse>(StatusCodes.Status201Created)]
-    public ActionResult<PositionResponse> Create([FromBody] CreatePositionRequest request)
+    [ProducesResponseType<Envelope<PositionResponse>>(StatusCodes.Status201Created)]
+    public EndpointResult<PositionResponse> Create([FromBody] CreatePositionRequest request)
     {
+        // Заглушка: возвращает переданные данные как созданный ресурс.
         var response = new PositionResponse(Guid.NewGuid(), request.Name);
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+        return EndpointResult<PositionResponse>.Created(Result.Success<PositionResponse, Failure>(response));
     }
 
     [HttpGet]
-    [ProducesResponseType<IReadOnlyCollection<PositionResponse>>(StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyCollection<PositionResponse>> GetAll()
+    [ProducesResponseType<Envelope<IReadOnlyCollection<PositionResponse>>>(StatusCodes.Status200OK)]
+    public EndpointResult<IReadOnlyCollection<PositionResponse>> GetAll()
     {
-        return Ok(Array.Empty<PositionResponse>());
+        IReadOnlyCollection<PositionResponse> positions = [];
+        return Result.Success<IReadOnlyCollection<PositionResponse>, Failure>(positions);
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType<PositionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<PositionResponse> GetById([FromRoute] Guid id)
+    [ProducesResponseType<Envelope<PositionResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public EndpointResult<PositionResponse> GetById([FromRoute] Guid id)
     {
-        return NotFound();
+        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
+        return Result.Failure<PositionResponse, Failure>(
+            Error.NotFound($"Должность '{id}' не найдена.", code: "directory.position.not_found"));
     }
 
     [HttpPut("{id:guid}")]
-    [ProducesResponseType<PositionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<PositionResponse> Update([FromRoute] Guid id, [FromBody] UpdatePositionRequest request)
+    [ProducesResponseType<Envelope<PositionResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public EndpointResult<PositionResponse> Update([FromRoute] Guid id, [FromBody] UpdatePositionRequest request)
     {
+        // Заглушка: возвращает переданные данные как обновлённый ресурс.
         var response = new PositionResponse(id, request.Name);
-
-        return Ok(response);
+        return Result.Success<PositionResponse, Failure>(response);
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Delete([FromRoute] Guid id)
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public EndpointResult Delete([FromRoute] Guid id)
     {
-        return NoContent();
+        // Заглушка: удаление ещё не реализовано (нет команды).
+        return UnitResult.Success<Failure>();
     }
 }
