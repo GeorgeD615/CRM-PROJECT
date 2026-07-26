@@ -19,7 +19,7 @@ public sealed class PositionConfiguration : IEntityTypeConfiguration<Position>
             .ValueGeneratedNever();
 
         builder.Property(p => p.Name)
-            .HasConversion(name => name.Value, value => PositionName.Create(value))
+            .HasConversion(name => name.Value, value => PositionName.Create(value).Value)
             .HasColumnName("name")
             .HasMaxLength(PositionName.MaxLength)
             .IsRequired();

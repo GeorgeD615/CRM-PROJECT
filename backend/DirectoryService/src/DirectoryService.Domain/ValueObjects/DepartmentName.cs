@@ -1,3 +1,6 @@
+using CSharpFunctionalExtensions;
+using DirectoryService.Shared;
+
 namespace DirectoryService.Domain.ValueObjects;
 
 public sealed record DepartmentName
@@ -8,18 +11,16 @@ public sealed record DepartmentName
 
     public string Value { get; }
 
-    public static DepartmentName Create(string value)
+    public static Result<DepartmentName, Failure> Create(string value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        if (string.IsNullOrWhiteSpace(value))
+            return Failure.FromError(Error.Validation("Имя подразделения обязательно.", code: "department.name.required"));
 
         string normalized = value.Trim();
 
-        if (normalized.Length == 0)
-            throw new ArgumentException("Department name must not be empty.", nameof(value));
-
         if (normalized.Length > MaxLength)
-            throw new ArgumentException(
-                $"Department name must not exceed {MaxLength} characters.", nameof(value));
+            return Failure.FromError(Error.Validation(
+                $"Имя подразделения не должно превышать {MaxLength} символов.", code: "department.name.too_long"));
 
         return new DepartmentName(normalized);
     }

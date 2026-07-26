@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Extensions;
+using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
@@ -30,12 +30,12 @@ public sealed class CreateLocationHandler(
         if (!validationResult.IsValid)
             return validationResult.ToErrors();
 
-        var name = LocationName.Create(request.Name);
+        var name = LocationName.Create(request.Name).Value;
         var address = LocationAddress.Create(
             request.Address.City,
             request.Address.Street,
             request.Address.House,
-            request.Address.Apartment);
+            request.Address.Apartment).Value;
 
         Result<bool, Failure> isNameTakenResult = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
         if (isNameTakenResult.IsFailure)

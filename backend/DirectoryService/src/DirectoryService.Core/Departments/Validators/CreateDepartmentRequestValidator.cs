@@ -1,34 +1,34 @@
 using DirectoryService.Contracts.Departments;
+using DirectoryService.Core.Validations;
 using DirectoryService.Domain.ValueObjects;
+using DirectoryService.Shared;
 using FluentValidation;
 
 namespace DirectoryService.Core.Departments.Validators;
 
 /// <summary>
-/// Валидация запроса на создание подразделения.
+/// Валидация запроса на создание подразделения: имя и slug переиспользуют доменные фабрики VO,
+/// проверки id родителя и локаций — request-specific и отдают доменный Error.
 /// </summary>
 public sealed class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartmentRequest>
 {
     public CreateDepartmentRequestValidator()
     {
-        RuleFor(r => r.Name)
-            .NotEmpty().WithMessage("Имя подразделения обязательно.")
-            .MaximumLength(DepartmentName.MaxLength)
-            .WithMessage($"Имя подразделения не должно превышать {DepartmentName.MaxLength} символов.");
+        RuleFor(r => r.Name).MustBeValueObject(DepartmentName.Create);
 
-        RuleFor(r => r.Slug)
-            .NotEmpty().WithMessage("Slug подразделения обязателен.")
-            .Length(DepartmentSlug.MinLength, DepartmentSlug.MaxLength)
-            .WithMessage($"Slug должен быть от {DepartmentSlug.MinLength} до {DepartmentSlug.MaxLength} символов.");
+        RuleFor(r => r.Slug).MustBeValueObject(DepartmentSlug.Create);
 
         RuleFor(r => r.ParentId)
-            .NotEqual(Guid.Empty).WithMessage("Id родительского подразделения не может быть пустым.")
+            .NotEqual(Guid.Empty)
+            .WithError(Error.Validation("Id родительского подразделения не может быть пустым.", "ParentId", "department.parent_id.empty"))
             .When(r => r.ParentId.HasValue);
 
         RuleFor(r => r.LocationIds)
-            .NotNull().WithMessage("Список локаций обязателен.");
+            .NotNull()
+            .WithError(Error.Validation("Список локаций обязателен.", "LocationIds", "department.location_ids.required"));
 
         RuleForEach(r => r.LocationIds)
-            .NotEmpty().WithMessage("Id локации не может быть пустым.");
+            .NotEmpty()
+            .WithError(Error.Validation("Id локации не может быть пустым.", "LocationIds", "department.location_id.empty"));
     }
 }

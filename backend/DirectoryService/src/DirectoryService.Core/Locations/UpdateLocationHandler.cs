@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Extensions;
+using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
@@ -41,7 +41,7 @@ public sealed class UpdateLocationHandler(
 
         Location location = locationResult.Value;
 
-        var name = LocationName.Create(request.Name);
+        var name = LocationName.Create(request.Name).Value;
 
         if (name != location.Name)
         {
@@ -57,7 +57,7 @@ public sealed class UpdateLocationHandler(
             request.Address.City,
             request.Address.Street,
             request.Address.House,
-            request.Address.Apartment);
+            request.Address.Apartment).Value;
 
         UnitResult<Failure> renameResult = location.Rename(name);
         if (renameResult.IsFailure)

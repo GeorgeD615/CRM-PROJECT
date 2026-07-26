@@ -17,10 +17,11 @@ public sealed record DepartmentPath
         if (segments.Length == 0)
             throw new ArgumentException("Department path must not be empty.", nameof(value));
 
-        DepartmentPath path = CreateRoot(DepartmentSlug.Create(segments[0]));
+        // Путь восстанавливается из уже валидного (сохранённого) значения — slug'и заведомо корректны.
+        DepartmentPath path = CreateRoot(DepartmentSlug.Create(segments[0]).Value);
 
         foreach (string segment in segments.Skip(1))
-            path = path.CreateChild(DepartmentSlug.Create(segment));
+            path = path.CreateChild(DepartmentSlug.Create(segment).Value);
 
         return path;
     }

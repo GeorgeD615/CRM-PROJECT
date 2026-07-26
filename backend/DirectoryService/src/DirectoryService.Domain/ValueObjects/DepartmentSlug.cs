@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using CSharpFunctionalExtensions;
+using DirectoryService.Shared;
 
 namespace DirectoryService.Domain.ValueObjects;
 
@@ -11,22 +13,27 @@ public sealed partial record DepartmentSlug
 
     public string Value { get; }
 
-    public static DepartmentSlug Create(string value)
+    public static Result<DepartmentSlug, Failure> Create(string value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        if (string.IsNullOrWhiteSpace(value))
+            return Failure.FromError(Error.Validation("Slug подразделения обязателен.", code: "department.slug.required"));
 
         string normalized = value.Trim().ToLowerInvariant();
 
+        var errors = new List<Error>();
+
         if (normalized.Length < MinLength || normalized.Length > MaxLength)
-            throw new ArgumentException(
-                $"Department slug must be between {MinLength} and {MaxLength} characters.",
-                nameof(value));
+            errors.Add(Error.Validation(
+                $"Slug должен быть от {MinLength} до {MaxLength} символов.", code: "department.slug.length"));
 
         if (!SlugPattern().IsMatch(normalized))
-            throw new ArgumentException(
-                "Department slug must contain only lowercase latin letters, digits and hyphens, " +
-                "and must not start or end with a hyphen.",
-                nameof(value));
+            errors.Add(Error.Validation(
+                "Slug может содержать только строчные латинские буквы, цифры и дефис, " +
+                "и не может начинаться или заканчиваться дефисом.",
+                code: "department.slug.format"));
+
+        if (errors.Count > 0)
+            return new Failure(errors);
 
         return new DepartmentSlug(normalized);
     }

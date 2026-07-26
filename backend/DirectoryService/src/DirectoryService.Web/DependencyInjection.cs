@@ -15,6 +15,7 @@ public static class DependencyInjection
     {
         services
             .AddControllers()
+            .ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true)
             .AddJsonOptions(options =>
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 

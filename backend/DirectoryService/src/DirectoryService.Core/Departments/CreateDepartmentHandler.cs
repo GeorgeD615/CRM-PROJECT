@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Extensions;
+using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
@@ -33,8 +33,8 @@ public sealed class CreateDepartmentHandler(
         if (!validationResult.IsValid)
             return validationResult.ToErrors();
 
-        var name = DepartmentName.Create(request.Name);
-        var slug = DepartmentSlug.Create(request.Slug);
+        var name = DepartmentName.Create(request.Name).Value;
+        var slug = DepartmentSlug.Create(request.Slug).Value;
 
         IReadOnlyCollection<LocationId> locationIds = [.. request.LocationIds
             .Distinct()
