@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Extensions;
+using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
@@ -40,7 +40,9 @@ public sealed class UpdateDepartmentHandler(
 
         Department department = departmentResult.Value;
 
-        UnitResult<Failure> renameResult = department.Rename(DepartmentName.Create(request.Name));
+        var name = DepartmentName.Create(request.Name).Value;
+
+        UnitResult<Failure> renameResult = department.Rename(name);
         if (renameResult.IsFailure)
             return renameResult.Error;
 

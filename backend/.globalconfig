@@ -45,6 +45,9 @@ dotnet_diagnostic.MA0051.severity = none
 # MA0053: sealed классы — слишком агрессивно для DDD-сущностей
 dotnet_diagnostic.MA0053.severity = none
 
+# MA0015: argument exception
+dotnet_diagnostic.MA0015.severity = none
+
 # RCS1090: ConfigureAwait — не нужен в ASP.NET Core
 dotnet_diagnostic.RCS1090.severity = none
 

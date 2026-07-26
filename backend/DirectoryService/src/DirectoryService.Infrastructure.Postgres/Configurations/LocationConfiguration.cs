@@ -19,7 +19,7 @@ public sealed class LocationConfiguration : IEntityTypeConfiguration<Location>
             .ValueGeneratedNever();
 
         builder.Property(l => l.Name)
-            .HasConversion(name => name.Value, value => LocationName.Create(value))
+            .HasConversion(name => name.Value, value => LocationName.Create(value).Value)
             .HasColumnName("name")
             .HasMaxLength(LocationName.MaxLength)
             .IsRequired();

@@ -19,13 +19,13 @@ public sealed class DepartmentConfiguration : IEntityTypeConfiguration<Departmen
             .ValueGeneratedNever();
 
         builder.Property(d => d.Name)
-            .HasConversion(name => name.Value, value => DepartmentName.Create(value))
+            .HasConversion(name => name.Value, value => DepartmentName.Create(value).Value)
             .HasColumnName("name")
             .HasMaxLength(DepartmentName.MaxLength)
             .IsRequired();
 
         builder.Property(d => d.Slug)
-            .HasConversion(slug => slug.Value, value => DepartmentSlug.Create(value))
+            .HasConversion(slug => slug.Value, value => DepartmentSlug.Create(value).Value)
             .HasColumnName("slug")
             .HasMaxLength(DepartmentSlug.MaxLength)
             .IsRequired();

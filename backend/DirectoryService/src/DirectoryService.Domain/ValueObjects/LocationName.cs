@@ -1,3 +1,6 @@
+using CSharpFunctionalExtensions;
+using DirectoryService.Shared;
+
 namespace DirectoryService.Domain.ValueObjects;
 
 public sealed record LocationName
@@ -8,18 +11,16 @@ public sealed record LocationName
 
     public string Value { get; }
 
-    public static LocationName Create(string value)
+    public static Result<LocationName, Failure> Create(string value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        if (string.IsNullOrWhiteSpace(value))
+            return Failure.FromError(Error.Validation("Имя локации обязательно.", code: "location.name.required"));
 
         string normalized = value.Trim();
 
-        if (normalized.Length == 0)
-            throw new ArgumentException("Location name must not be empty.", nameof(value));
-
         if (normalized.Length > MaxLength)
-            throw new ArgumentException(
-                $"Location name must not exceed {MaxLength} characters.", nameof(value));
+            return Failure.FromError(Error.Validation(
+                $"Имя локации не должно превышать {MaxLength} символов.", code: "location.name.too_long"));
 
         return new LocationName(normalized);
     }

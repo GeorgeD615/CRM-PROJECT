@@ -1,3 +1,6 @@
+using CSharpFunctionalExtensions;
+using DirectoryService.Shared;
+
 namespace DirectoryService.Domain.ValueObjects;
 
 public sealed record LocationAddress
@@ -23,28 +26,47 @@ public sealed record LocationAddress
 
     public string Apartment { get; }
 
-    public static LocationAddress Create(string city, string street, string house, string apartment)
+    public static Result<LocationAddress, Failure> Create(string city, string street, string house, string apartment)
     {
-        return new LocationAddress(
-            Normalize(city, MaxCityLength, nameof(city)),
-            Normalize(street, MaxStreetLength, nameof(street)),
-            Normalize(house, MaxHouseLength, nameof(house)),
-            Normalize(apartment, MaxApartmentLength, nameof(apartment)));
+        var errors = new List<Error>();
+
+        string? normalizedCity = Validate(
+            city, MaxCityLength, "Город обязателен.", $"Город не должен превышать {MaxCityLength} символов.", "location.address.city", errors);
+        string? normalizedStreet = Validate(
+            street, MaxStreetLength, "Улица обязательна.", $"Улица не должна превышать {MaxStreetLength} символов.", "location.address.street", errors);
+        string? normalizedHouse = Validate(
+            house, MaxHouseLength, "Дом обязателен.", $"Номер дома не должен превышать {MaxHouseLength} символов.", "location.address.house", errors);
+        string? normalizedApartment = Validate(
+            apartment, MaxApartmentLength, "Квартира обязательна.", $"Номер квартиры не должен превышать {MaxApartmentLength} символов.", "location.address.apartment", errors);
+
+        if (errors.Count > 0)
+            return new Failure(errors);
+
+        // Проверки выше гарантируют, что все значения не null, когда список ошибок пуст.
+        return new LocationAddress(normalizedCity!, normalizedStreet!, normalizedHouse!, normalizedApartment!);
     }
 
-    private static string Normalize(string value, int maxLength, string paramName)
+    private static string? Validate(
+        string value,
+        int maxLength,
+        string requiredMessage,
+        string tooLongMessage,
+        string codePrefix,
+        List<Error> errors)
     {
-        if (value is null)
-            throw new ArgumentNullException(paramName);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            errors.Add(Error.Validation(requiredMessage, code: $"{codePrefix}.required"));
+            return null;
+        }
 
         string normalized = value.Trim();
 
-        if (normalized.Length == 0)
-            throw new ArgumentException($"Location address {paramName} must not be empty.", paramName);
-
         if (normalized.Length > maxLength)
-            throw new ArgumentException(
-                $"Location address {paramName} must not exceed {maxLength} characters.", paramName);
+        {
+            errors.Add(Error.Validation(tooLongMessage, code: $"{codePrefix}.too_long"));
+            return null;
+        }
 
         return normalized;
     }
