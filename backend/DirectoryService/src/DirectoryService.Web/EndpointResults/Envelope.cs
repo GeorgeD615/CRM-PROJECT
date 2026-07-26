@@ -1,4 +1,5 @@
 using DirectoryService.Shared;
+using System.Text.Json.Serialization;
 
 namespace DirectoryService.Web.EndpointResults;
 
@@ -20,6 +21,7 @@ public sealed record Envelope
 
     public Failure? Errors { get; }
 
+    [JsonIgnore]
     public bool IsError => Errors is not null;
 
     public DateTime TimeGenerated { get; }
@@ -45,6 +47,7 @@ public sealed record Envelope<T>
 
     public Failure? Errors { get; }
 
+    [JsonIgnore]
     public bool IsError => Errors is not null;
 
     public DateTime TimeGenerated { get; }
