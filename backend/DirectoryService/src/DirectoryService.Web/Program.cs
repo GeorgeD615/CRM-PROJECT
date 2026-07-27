@@ -1,29 +1,51 @@
 using DirectoryService.Web;
 using DirectoryService.Web.Middlewares;
 using Scalar.AspNetCore;
+using Serilog;
+using System.Globalization;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+    .CreateBootstrapLogger();
 
-builder.Services.AddWebDependencies(builder.Configuration);
-
-builder.Host.UseDefaultServiceProvider(options =>
+try
 {
-    options.ValidateScopes = builder.Environment.IsDevelopment();
-    options.ValidateOnBuild = builder.Environment.IsDevelopment();
-});
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-WebApplication app = builder.Build();
+    builder.Services.AddWebDependencies(builder.Configuration);
 
-app.UseExceptionMiddleware();
+    builder.Host.UseDefaultServiceProvider(options =>
+    {
+        options.ValidateScopes = builder.Environment.IsDevelopment();
+        options.ValidateOnBuild = builder.Environment.IsDevelopment();
+    });
 
-app.MapHealthChecks("/api/health");
+    WebApplication app = builder.Build();
 
-app.MapControllers();
+    app.UseSerilogRequestLogging(options =>
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            diagnosticContext.Set("RequestId", httpContext.TraceIdentifier));
 
-if (!app.Environment.IsProduction())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.UseExceptionMiddleware();
+
+    app.MapHealthChecks("/api/health");
+
+    app.MapControllers();
+
+    if (!app.Environment.IsProduction())
+    {
+        app.MapOpenApi();
+        app.MapScalarApiReference();
+    }
+
+    await app.RunAsync();
 }
-
-await app.RunAsync();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}

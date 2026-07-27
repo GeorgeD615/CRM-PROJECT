@@ -1,6 +1,10 @@
-using System.Text.Json.Serialization;
 using DirectoryService.Core;
 using DirectoryService.Infrastructure.Postgres;
+using Serilog;
+using Serilog.Exceptions;
+using Serilog.Exceptions.Core;
+using Serilog.Exceptions.EntityFrameworkCore.Destructurers;
+using System.Text.Json.Serialization;
 
 namespace DirectoryService.Web;
 
@@ -30,6 +34,27 @@ public static class DependencyInjection
         services.AddInfrastructure(configuration);
 
         services.AddCore();
+
+        services.AddSerilogLogging(configuration);
+
+        return services;
+    }
+
+    public static IServiceCollection AddSerilogLogging(
+        this IServiceCollection services, IConfiguration configuration)
+    {
+        // Sink-и, минимальный уровень и override-ы берём из конфигурации appsettings,
+        // а обогащение задаём здесь — так гарантируем наличие нужных пакетов-энричеров
+        services.AddSerilog((sp, lc) => lc
+            .ReadFrom.Configuration(configuration)
+            .ReadFrom.Services(sp)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithExceptionDetails(new DestructuringOptionsBuilder()
+                .WithDefaultDestructurers()
+                .WithDestructurers([new DbUpdateExceptionDestructurer()]))
+            .Enrich.WithProperty("ServiceName", "DirectoryService"));
 
         return services;
     }
