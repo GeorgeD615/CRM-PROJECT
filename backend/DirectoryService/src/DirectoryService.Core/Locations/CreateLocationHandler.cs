@@ -6,22 +6,25 @@ using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Locations;
 
 /// <summary>
 /// Сценарий создания локации: валидирует запрос, проверяет уникальность имени
-/// и возвращает id созданной локации либо <see cref="Failure"/>. Не бросает и не логирует —
-/// все ошибки возвращаются как результат.
+/// и возвращает id созданной локации либо <see cref="Failure"/>. Не бросает; успех логируется
+/// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class CreateLocationHandler(
     IValidator<CreateLocationRequest> validator,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager)
+    ITransactionManager transactionManager,
+    ILogger<CreateLocationHandler> logger)
 {
     private readonly IValidator<CreateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
+    private readonly ILogger<CreateLocationHandler> _logger = logger;
 
     public async Task<Result<Guid, Failure>> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
     {
@@ -42,7 +45,11 @@ public sealed class CreateLocationHandler(
             return isNameTakenResult.Error;
 
         if (isNameTakenResult.Value)
+        {
+            _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
+
             return Failure.From(Error.Conflict($"Локация с именем '{name.Value}' уже существует.", code: "directory.location.name_conflict"));
+        }
 
         Result<Location, Failure> locationResult = Location.Create(name, address);
         if (locationResult.IsFailure)
@@ -55,6 +62,8 @@ public sealed class CreateLocationHandler(
             return addResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Location {LocationId} created with name {LocationName}.", location.Id.Value, location.Name.Value);
 
         return location.Id.Value;
     }

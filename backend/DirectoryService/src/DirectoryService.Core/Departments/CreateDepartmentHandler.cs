@@ -6,25 +6,28 @@ using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Departments;
 
 /// <summary>
 /// Сценарий создания подразделения: проверяет существование родителя и локаций,
 /// строит доменную модель с путём из slug'ов и атомарно сохраняет подразделение
-/// вместе с его первичными связями с локациями. Не бросает и не логирует —
-/// все ошибки возвращаются как результат.
+/// вместе с его первичными связями с локациями. Не бросает; успех логируется
+/// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class CreateDepartmentHandler(
     IValidator<CreateDepartmentRequest> validator,
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager)
+    ITransactionManager transactionManager,
+    ILogger<CreateDepartmentHandler> logger)
 {
     private readonly IValidator<CreateDepartmentRequest> _validator = validator;
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
+    private readonly ILogger<CreateDepartmentHandler> _logger = logger;
 
     public async Task<Result<Guid, Failure>> HandleAsync(CreateDepartmentRequest request, CancellationToken cancellationToken)
     {
@@ -71,6 +74,12 @@ public sealed class CreateDepartmentHandler(
             return addResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Department {DepartmentId} created with path {DepartmentPath} and {LocationCount} locations.",
+            department.Id.Value,
+            department.Path.Value,
+            departmentLocations.Length);
 
         return department.Id.Value;
     }

@@ -6,22 +6,25 @@ using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Locations;
 
 /// <summary>
 /// Сценарий обновления локации: меняет имя и адрес существующей локации,
-/// не допуская дубля имени с другой локацией. Не бросает и не логирует —
-/// все ошибки возвращаются как результат.
+/// не допуская дубля имени с другой локацией. Не бросает; успех логируется
+/// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class UpdateLocationHandler(
     IValidator<UpdateLocationRequest> validator,
     ILocationsRepository locationsRepository,
-    ITransactionManager transactionManager)
+    ITransactionManager transactionManager,
+    ILogger<UpdateLocationHandler> logger)
 {
     private readonly IValidator<UpdateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
+    private readonly ILogger<UpdateLocationHandler> _logger = logger;
 
     public async Task<UnitResult<Failure>> HandleAsync(
         Guid locationId,
@@ -50,7 +53,11 @@ public sealed class UpdateLocationHandler(
                 return isNameTakenResult.Error;
 
             if (isNameTakenResult.Value)
+            {
+                _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
+
                 return Failure.From(Error.Conflict($"Локация с именем '{name.Value}' уже существует.", code: "directory.location.name_conflict"));
+            }
         }
 
         var address = LocationAddress.Create(
@@ -68,6 +75,8 @@ public sealed class UpdateLocationHandler(
             return changeAddressResult.Error;
 
         await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Location {LocationId} updated.", locationId);
 
         return UnitResult.Success<Failure>();
     }
