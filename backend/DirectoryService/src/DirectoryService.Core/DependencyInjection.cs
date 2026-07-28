@@ -1,25 +1,28 @@
-using DirectoryService.Core.Departments;
-using DirectoryService.Core.Locations;
+using DirectoryService.Core.Abstractions;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DirectoryService.Core;
 
 /// <summary>
-/// Регистрация сервисов слоя Core в DI-контейнере.
+/// Регистрация сервисов слоя Core в DI-контейнере. Валидаторы и handler-ы находятся
+/// сканированием сборки — добавление нового feature-среза не требует правки этого файла.
 /// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddCore(this IServiceCollection services)
     {
-        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        var assembly = typeof(DependencyInjection).Assembly;
 
-        services.AddScoped<CreateLocationHandler>();
-        services.AddScoped<UpdateLocationHandler>();
-        services.AddScoped<CreateDepartmentHandler>();
-        services.AddScoped<UpdateDepartmentHandler>();
-        services.AddScoped<AttachLocationHandler>();
-        services.AddScoped<DetachLocationHandler>();
+        services.AddValidatorsFromAssembly(assembly);
+
+        services.Scan(scan => scan.FromAssemblies(assembly)
+            .AddClasses(classes => classes.AssignableToAny(
+                typeof(ICommandHandler<,>),
+                typeof(ICommandHandler<>),
+                typeof(IQueryHandler<,>)))
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
 
         return services;
     }

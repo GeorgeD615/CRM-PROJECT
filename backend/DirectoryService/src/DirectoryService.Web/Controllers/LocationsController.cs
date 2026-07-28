@@ -1,6 +1,8 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
-using DirectoryService.Core.Locations;
+using DirectoryService.Core.Abstractions;
+using DirectoryService.Core.Locations.CreateLocation;
+using DirectoryService.Core.Locations.UpdateLocation;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +22,10 @@ public sealed class LocationsController : ControllerBase
     [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
     public async Task<EndpointResult<Guid>> Create(
         [FromBody] CreateLocationRequest request,
-        [FromServices] CreateLocationHandler createLocationHandler,
+        [FromServices] ICommandHandler<Guid, CreateLocationCommand> createLocationHandler,
         CancellationToken cancellationToken)
     {
-        return EndpointResult<Guid>.Created(await createLocationHandler.HandleAsync(request, cancellationToken));
+        return EndpointResult<Guid>.Created(await createLocationHandler.HandleAsync(new(request), cancellationToken));
     }
 
     [HttpGet]
@@ -53,10 +55,10 @@ public sealed class LocationsController : ControllerBase
     public async Task<EndpointResult> Update(
         [FromRoute] Guid id,
         [FromBody] UpdateLocationRequest request,
-        [FromServices] UpdateLocationHandler updateLocationHandler,
+        [FromServices] ICommandHandler<UpdateLocationCommand> updateLocationHandler,
         CancellationToken cancellationToken)
     {
-        return await updateLocationHandler.HandleAsync(id, request, cancellationToken);
+        return await updateLocationHandler.HandleAsync(new(id, request), cancellationToken);
     }
 
     [HttpDelete("{id:guid}")]

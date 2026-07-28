@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
+using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
 using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
@@ -8,7 +9,7 @@ using DirectoryService.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Core.Departments;
+namespace DirectoryService.Core.Departments.UpdateDepartment;
 
 /// <summary>
 /// Сценарий обновления подразделения: меняет редактируемые поля существующего подразделения.
@@ -18,18 +19,18 @@ public sealed class UpdateDepartmentHandler(
     IValidator<UpdateDepartmentRequest> validator,
     IDepartmentsRepository departmentsRepository,
     ITransactionManager transactionManager,
-    ILogger<UpdateDepartmentHandler> logger)
+    ILogger<UpdateDepartmentHandler> logger) : ICommandHandler<UpdateDepartmentCommand>
 {
     private readonly IValidator<UpdateDepartmentRequest> _validator = validator;
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<UpdateDepartmentHandler> _logger = logger;
 
-    public async Task<UnitResult<Failure>> HandleAsync(
-        Guid departmentId,
-        UpdateDepartmentRequest request,
-        CancellationToken cancellationToken)
+    public async Task<UnitResult<Failure>> HandleAsync(UpdateDepartmentCommand command, CancellationToken cancellationToken)
     {
+        Guid departmentId = command.DepartmentId;
+        UpdateDepartmentRequest request = command.UpdateDepartmentDto;
+
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)

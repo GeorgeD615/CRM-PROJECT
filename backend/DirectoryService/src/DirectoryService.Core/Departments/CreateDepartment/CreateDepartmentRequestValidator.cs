@@ -4,7 +4,7 @@ using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using FluentValidation;
 
-namespace DirectoryService.Core.Departments.Validators;
+namespace DirectoryService.Core.Departments.CreateDepartment;
 
 /// <summary>
 /// Валидация запроса на создание подразделения: имя и slug переиспользуют доменные фабрики VO,

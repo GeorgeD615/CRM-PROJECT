@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
 using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
@@ -8,7 +9,7 @@ using DirectoryService.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Core.Locations;
+namespace DirectoryService.Core.Locations.CreateLocation;
 
 /// <summary>
 /// Сценарий создания локации: валидирует запрос, проверяет уникальность имени
@@ -19,15 +20,17 @@ public sealed class CreateLocationHandler(
     IValidator<CreateLocationRequest> validator,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
-    ILogger<CreateLocationHandler> logger)
+    ILogger<CreateLocationHandler> logger) : ICommandHandler<Guid, CreateLocationCommand>
 {
     private readonly IValidator<CreateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<CreateLocationHandler> _logger = logger;
 
-    public async Task<Result<Guid, Failure>> HandleAsync(CreateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Guid, Failure>> HandleAsync(CreateLocationCommand command, CancellationToken cancellationToken)
     {
+        CreateLocationRequest request = command.CreateLocationDto;
+
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)
