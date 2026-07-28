@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
+using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
 using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
@@ -8,7 +9,7 @@ using DirectoryService.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Core.Departments;
+namespace DirectoryService.Core.Departments.CreateDepartment;
 
 /// <summary>
 /// Сценарий создания подразделения: проверяет существование родителя и локаций,
@@ -21,7 +22,7 @@ public sealed class CreateDepartmentHandler(
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
-    ILogger<CreateDepartmentHandler> logger)
+    ILogger<CreateDepartmentHandler> logger) : ICommandHandler<Guid, CreateDepartmentCommand>
 {
     private readonly IValidator<CreateDepartmentRequest> _validator = validator;
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
@@ -29,17 +30,17 @@ public sealed class CreateDepartmentHandler(
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<CreateDepartmentHandler> _logger = logger;
 
-    public async Task<Result<Guid, Failure>> HandleAsync(CreateDepartmentRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Guid, Failure>> HandleAsync(CreateDepartmentCommand command, CancellationToken cancellationToken)
     {
-        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+        var validationResult = await _validator.ValidateAsync(command.CreateDepartmentDto, cancellationToken);
 
         if (!validationResult.IsValid)
             return validationResult.ToErrors();
 
-        var name = DepartmentName.Create(request.Name).Value;
-        var slug = DepartmentSlug.Create(request.Slug).Value;
+        var name = DepartmentName.Create(command.CreateDepartmentDto.Name).Value;
+        var slug = DepartmentSlug.Create(command.CreateDepartmentDto.Slug).Value;
 
-        IReadOnlyCollection<LocationId> locationIds = [.. request.LocationIds
+        IReadOnlyCollection<LocationId> locationIds = [.. command.CreateDepartmentDto.LocationIds
             .Distinct()
             .Select(LocationId.Create)];
 
@@ -48,7 +49,7 @@ public sealed class CreateDepartmentHandler(
             return ensureLocationsResult.Error;
 
         Result<Department, Failure> departmentResult;
-        if (request.ParentId is { } parentId)
+        if (command.CreateDepartmentDto.ParentId is { } parentId)
         {
             Result<Department, Failure> parentResult = await GetParentAsync(parentId, cancellationToken);
             if (parentResult.IsFailure)

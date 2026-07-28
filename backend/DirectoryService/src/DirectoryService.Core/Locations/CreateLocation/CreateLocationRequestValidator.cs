@@ -4,7 +4,7 @@ using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using FluentValidation;
 
-namespace DirectoryService.Core.Locations.Validators;
+namespace DirectoryService.Core.Locations.CreateLocation;
 
 /// <summary>
 /// Валидация запроса на создание локации: правила имени и адреса переиспользуют доменные фабрики VO.

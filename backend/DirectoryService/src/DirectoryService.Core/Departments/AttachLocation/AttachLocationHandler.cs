@@ -1,11 +1,12 @@
 using CSharpFunctionalExtensions;
+using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Core.Departments;
+namespace DirectoryService.Core.Departments.AttachLocation;
 
 /// <summary>
 /// Сценарий привязки локации к подразделению: проверяет, что обе стороны существуют и связи ещё нет, и создаёт связь.
@@ -15,15 +16,18 @@ public sealed class AttachLocationHandler(
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
-    ILogger<AttachLocationHandler> logger)
+    ILogger<AttachLocationHandler> logger) : ICommandHandler<AttachLocationCommand>
 {
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<AttachLocationHandler> _logger = logger;
 
-    public async Task<UnitResult<Failure>> HandleAsync(Guid departmentId, Guid locationId, CancellationToken cancellationToken)
+    public async Task<UnitResult<Failure>> HandleAsync(AttachLocationCommand command, CancellationToken cancellationToken)
     {
+        Guid departmentId = command.DepartmentId;
+        Guid locationId = command.LocationId;
+
         var typedDepartmentId = DepartmentId.Create(departmentId);
         var typedLocationId = LocationId.Create(locationId);
 

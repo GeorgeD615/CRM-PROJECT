@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
 using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
@@ -8,7 +9,7 @@ using DirectoryService.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Core.Locations;
+namespace DirectoryService.Core.Locations.UpdateLocation;
 
 /// <summary>
 /// Сценарий обновления локации: меняет имя и адрес существующей локации,
@@ -19,18 +20,18 @@ public sealed class UpdateLocationHandler(
     IValidator<UpdateLocationRequest> validator,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
-    ILogger<UpdateLocationHandler> logger)
+    ILogger<UpdateLocationHandler> logger) : ICommandHandler<UpdateLocationCommand>
 {
     private readonly IValidator<UpdateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<UpdateLocationHandler> _logger = logger;
 
-    public async Task<UnitResult<Failure>> HandleAsync(
-        Guid locationId,
-        UpdateLocationRequest request,
-        CancellationToken cancellationToken)
+    public async Task<UnitResult<Failure>> HandleAsync(UpdateLocationCommand command, CancellationToken cancellationToken)
     {
+        Guid locationId = command.LocationId;
+        UpdateLocationRequest request = command.UpdateLocationDto;
+
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
         if (!validationResult.IsValid)

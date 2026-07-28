@@ -3,7 +3,7 @@ using DirectoryService.Core.Validations;
 using DirectoryService.Domain.ValueObjects;
 using FluentValidation;
 
-namespace DirectoryService.Core.Departments.Validators;
+namespace DirectoryService.Core.Departments.UpdateDepartment;
 
 /// <summary>
 /// Валидация запроса на обновление подразделения: имя переиспользует доменную фабрику VO.
