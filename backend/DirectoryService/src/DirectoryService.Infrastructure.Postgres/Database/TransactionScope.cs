@@ -1,7 +1,7 @@
-using System.Data;
 using CSharpFunctionalExtensions;
 using DirectoryService.Core.Database;
 using DirectoryService.Shared;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Infrastructure.Postgres.Database;
@@ -10,7 +10,7 @@ namespace DirectoryService.Infrastructure.Postgres.Database;
 /// Явная транзакция на время use case-а. Commit категоризирует технические сбои через
 /// <see cref="DbExceptionMapper"/>; при Dispose незакоммиченная транзакция откатывается.
 /// </summary>
-public sealed class TransactionScope(ILogger<TransactionScope> logger, IDbTransaction transaction) : ITransactionScope
+public sealed class TransactionScope(ILogger<TransactionScope> logger, IDbContextTransaction transaction) : ITransactionScope
 {
     public UnitResult<Failure> Commit()
     {
@@ -27,6 +27,8 @@ public sealed class TransactionScope(ILogger<TransactionScope> logger, IDbTransa
                 logger.LogError(ex, "Failed to commit transaction.");
             else
                 logger.LogWarning(ex, "Transaction commit conflicted.");
+
+            Rollback();
 
             return failure;
         }

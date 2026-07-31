@@ -24,7 +24,7 @@ public sealed class TransactionManager(
             IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             var transactionScope = new TransactionScope(
                 loggerFactory.CreateLogger<TransactionScope>(),
-                transaction.GetDbTransaction());
+                transaction);
 
             return transactionScope;
         }
