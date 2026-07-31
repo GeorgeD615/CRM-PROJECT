@@ -1,12 +1,10 @@
+﻿using CSharpFunctionalExtensions;
+using DirectoryService.Shared;
+
 namespace DirectoryService.Core.Database;
 
-/// <summary>
-/// Фиксирует накопленные изменения как одну атомарную операцию.
-/// </summary>
 public interface ITransactionManager
 {
-    /// <summary>
-    /// Атомарно сохраняет все накопленные изменения.
-    /// </summary>
-    Task SaveChangesAsync(CancellationToken cancellationToken);
+    Task<Result<ITransactionScope, Failure>> BeginTransactionAsync(CancellationToken cancellationToken);
+    Task<UnitResult<Failure>> SaveChangesAsync(CancellationToken cancellationToken);
 }

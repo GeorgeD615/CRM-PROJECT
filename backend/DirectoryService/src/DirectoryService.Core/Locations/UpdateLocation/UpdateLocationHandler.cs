@@ -49,11 +49,8 @@ public sealed class UpdateLocationHandler(
 
         if (name != location.Name)
         {
-            Result<bool, Failure> isNameTakenResult = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
-            if (isNameTakenResult.IsFailure)
-                return isNameTakenResult.Error;
-
-            if (isNameTakenResult.Value)
+            bool isNameTaken = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
+            if (isNameTaken)
             {
                 _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
 
@@ -75,7 +72,9 @@ public sealed class UpdateLocationHandler(
         if (changeAddressResult.IsFailure)
             return changeAddressResult.Error;
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         _logger.LogInformation("Location {LocationId} updated.", locationId);
 

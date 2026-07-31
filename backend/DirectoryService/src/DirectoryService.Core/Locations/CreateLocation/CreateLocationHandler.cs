@@ -43,11 +43,8 @@ public sealed class CreateLocationHandler(
             request.Address.House,
             request.Address.Apartment).Value;
 
-        Result<bool, Failure> isNameTakenResult = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
-        if (isNameTakenResult.IsFailure)
-            return isNameTakenResult.Error;
-
-        if (isNameTakenResult.Value)
+        bool isNameTaken = await _locationsRepository.IsNameTakenAsync(name, cancellationToken);
+        if (isNameTaken)
         {
             _logger.LogWarning("Location name {LocationName} is already taken.", name.Value);
 
@@ -60,11 +57,11 @@ public sealed class CreateLocationHandler(
 
         Location location = locationResult.Value;
 
-        UnitResult<Failure> addResult = _locationsRepository.Add(location);
-        if (addResult.IsFailure)
-            return addResult.Error;
+        _locationsRepository.Add(location);
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         _logger.LogInformation("Location {LocationId} created with name {LocationName}.", location.Id.Value, location.Name.Value);
 

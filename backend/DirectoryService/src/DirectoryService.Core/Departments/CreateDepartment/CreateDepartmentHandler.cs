@@ -70,11 +70,22 @@ public sealed class CreateDepartmentHandler(
         DepartmentLocation[] departmentLocations = [.. locationIds.Select(locationId =>
             DepartmentLocation.Create(department.Id, locationId, isPrimary: false))];
 
-        UnitResult<Failure> addResult = _departmentsRepository.Add(department, departmentLocations);
-        if (addResult.IsFailure)
-            return addResult.Error;
+        // Несколько зависимых изменений (подразделение + связи) — единая явная транзакция.
+        Result<ITransactionScope, Failure> transactionResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
+        if (transactionResult.IsFailure)
+            return transactionResult.Error;
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        using ITransactionScope transaction = transactionResult.Value;
+
+        _departmentsRepository.Add(department, departmentLocations);
+
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
+
+        UnitResult<Failure> commitResult = transaction.Commit();
+        if (commitResult.IsFailure)
+            return commitResult.Error;
 
         _logger.LogInformation(
             "Department {DepartmentId} created with path {DepartmentPath} and {LocationCount} locations.",
@@ -92,13 +103,11 @@ public sealed class CreateDepartmentHandler(
         if (locationIds.Count == 0)
             return UnitResult.Success<Failure>();
 
-        Result<IReadOnlyCollection<LocationId>, Failure> existingIdsResult =
+        IReadOnlyCollection<LocationId> existingIds =
             await _locationsRepository.GetExistingIdsAsync(locationIds, cancellationToken);
-        if (existingIdsResult.IsFailure)
-            return existingIdsResult.Error;
 
         Guid[] missingIds = [.. locationIds
-            .Except(existingIdsResult.Value)
+            .Except(existingIds)
             .Select(id => id.Value)];
 
         if (missingIds.Length == 0)

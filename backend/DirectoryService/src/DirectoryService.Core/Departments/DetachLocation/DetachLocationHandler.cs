@@ -33,11 +33,11 @@ public sealed class DetachLocationHandler(
         if (linkResult.IsFailure)
             return linkResult.Error;
 
-        UnitResult<Failure> removeResult = _departmentsRepository.RemoveDepartmentLocation(linkResult.Value);
-        if (removeResult.IsFailure)
-            return removeResult.Error;
+        _departmentsRepository.RemoveDepartmentLocation(linkResult.Value);
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         _logger.LogInformation(
             "Location {LocationId} detached from department {DepartmentId}.",

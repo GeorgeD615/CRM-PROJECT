@@ -6,7 +6,8 @@ using DirectoryService.Shared;
 namespace DirectoryService.Core.Database;
 
 /// <summary>
-/// Контракт хранилища подразделений.
+/// Контракт хранилища подразделений: добавляет, загружает и удаляет сущности в текущем контексте,
+/// но не фиксирует изменения — commit остаётся за <see cref="ITransactionManager"/>.
 /// </summary>
 public interface IDepartmentsRepository
 {
@@ -16,9 +17,9 @@ public interface IDepartmentsRepository
     Task<Result<Department, Failure>> GetByIdAsync(DepartmentId id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Добавляет подразделение вместе с его связями с локациями.
+    /// Добавляет подразделение вместе с его связями с локациями в текущий контекст (без сохранения).
     /// </summary>
-    UnitResult<Failure> Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
+    void Add(Department department, IReadOnlyCollection<DepartmentLocation> departmentLocations);
 
     /// <summary>
     /// Возвращает связь подразделения с локацией; <see cref="ErrorType.NotFound"/>, если связи нет.
@@ -29,12 +30,12 @@ public interface IDepartmentsRepository
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Добавляет связь подразделения с локацией.
+    /// Добавляет связь подразделения с локацией в текущий контекст (без сохранения).
     /// </summary>
-    UnitResult<Failure> AddDepartmentLocation(DepartmentLocation departmentLocation);
+    void AddDepartmentLocation(DepartmentLocation departmentLocation);
 
     /// <summary>
-    /// Удаляет связь подразделения с локацией.
+    /// Удаляет связь подразделения с локацией из текущего контекста (без сохранения).
     /// </summary>
-    UnitResult<Failure> RemoveDepartmentLocation(DepartmentLocation departmentLocation);
+    void RemoveDepartmentLocation(DepartmentLocation departmentLocation);
 }

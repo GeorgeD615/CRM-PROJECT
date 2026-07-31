@@ -50,7 +50,9 @@ public sealed class UpdateDepartmentHandler(
         if (renameResult.IsFailure)
             return renameResult.Error;
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         _logger.LogInformation("Department {DepartmentId} renamed to {DepartmentName}.", departmentId, name.Value);
 
