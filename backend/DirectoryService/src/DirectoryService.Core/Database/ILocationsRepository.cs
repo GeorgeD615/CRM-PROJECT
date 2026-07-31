@@ -6,7 +6,8 @@ using DirectoryService.Shared;
 namespace DirectoryService.Core.Database;
 
 /// <summary>
-/// Контракт хранилища локаций.
+/// Контракт хранилища локаций: добавляет и загружает сущности в текущем контексте,
+/// но не фиксирует изменения — commit остаётся за <see cref="ITransactionManager"/>.
 /// </summary>
 public interface ILocationsRepository
 {
@@ -18,17 +19,17 @@ public interface ILocationsRepository
     /// <summary>
     /// Проверяет, занято ли имя локации.
     /// </summary>
-    Task<Result<bool, Failure>> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
+    Task<bool> IsNameTakenAsync(LocationName name, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Добавляет новую локацию.
+    /// Добавляет новую локацию в текущий контекст (без сохранения).
     /// </summary>
-    UnitResult<Failure> Add(Location location);
+    void Add(Location location);
 
     /// <summary>
     /// Возвращает те из переданных id, для которых локация существует.
     /// </summary>
-    Task<Result<IReadOnlyCollection<LocationId>, Failure>> GetExistingIdsAsync(
+    Task<IReadOnlyCollection<LocationId>> GetExistingIdsAsync(
         IReadOnlyCollection<LocationId> locationIds,
         CancellationToken cancellationToken);
 }

@@ -88,3 +88,8 @@ dotnet_diagnostic.CA2225.severity = none
 
 # Разрешение 
 dotnet_diagnostic.CA1040.severity = none
+
+# Разрешение 
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA1816.severity = none
+dotnet_diagnostic.S3881.severity = none

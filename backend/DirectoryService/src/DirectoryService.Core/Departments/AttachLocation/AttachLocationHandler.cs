@@ -58,17 +58,14 @@ public sealed class AttachLocationHandler(
                 code: "directory.department_location.conflict"));
         }
 
-        // «Связь не найдена» — ожидаемый путь; настоящую ошибку БД пробрасываем наверх.
-        if (existingLinkResult.Error.Any(error => error.Type != ErrorType.NotFound))
-            return existingLinkResult.Error;
-
+        // existingLinkResult.IsFailure здесь означает «связь не найдена» — ожидаемый путь.
         var link = DepartmentLocation.Create(typedDepartmentId, typedLocationId, isPrimary: false);
 
-        UnitResult<Failure> addResult = _departmentsRepository.AddDepartmentLocation(link);
-        if (addResult.IsFailure)
-            return addResult.Error;
+        _departmentsRepository.AddDepartmentLocation(link);
 
-        await _transactionManager.SaveChangesAsync(cancellationToken);
+        UnitResult<Failure> saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         _logger.LogInformation(
             "Location {LocationId} attached to department {DepartmentId}.",
