@@ -8,10 +8,10 @@ namespace DirectoryService.Core.Departments.UpdateDepartment;
 /// <summary>
 /// Валидация запроса на обновление подразделения: имя переиспользует доменную фабрику VO.
 /// </summary>
-public sealed class UpdateDepartmentRequestValidator : AbstractValidator<UpdateDepartmentRequest>
+public sealed class UpdateDepartmentRequestValidator : AbstractValidator<UpdateDepartmentCommand>
 {
     public UpdateDepartmentRequestValidator()
     {
-        RuleFor(r => r.Name).MustBeValueObject(DepartmentName.Create);
+        RuleFor(r => r.UpdateDepartmentDto.Name).MustBeValueObject(DepartmentName.Create);
     }
 }

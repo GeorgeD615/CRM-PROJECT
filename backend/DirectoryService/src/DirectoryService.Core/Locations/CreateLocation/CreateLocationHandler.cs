@@ -17,12 +17,10 @@ namespace DirectoryService.Core.Locations.CreateLocation;
 /// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class CreateLocationHandler(
-    IValidator<CreateLocationRequest> validator,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
     ILogger<CreateLocationHandler> logger) : ICommandHandler<Guid, CreateLocationCommand>
 {
-    private readonly IValidator<CreateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<CreateLocationHandler> _logger = logger;
@@ -30,11 +28,6 @@ public sealed class CreateLocationHandler(
     public async Task<Result<Guid, Failure>> HandleAsync(CreateLocationCommand command, CancellationToken cancellationToken)
     {
         CreateLocationRequest request = command.CreateLocationDto;
-
-        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
-
-        if (!validationResult.IsValid)
-            return validationResult.ToErrors();
 
         var name = LocationName.Create(request.Name).Value;
         var address = LocationAddress.Create(

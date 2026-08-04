@@ -1,4 +1,5 @@
 using DirectoryService.Core.Abstractions;
+using DirectoryService.Core.Behaviours;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +24,9 @@ public static class DependencyInjection
                 typeof(IQueryHandler<,>)))
             .AsSelfWithInterfaces()
             .WithScopedLifetime());
+
+        services.TryDecorate(typeof(ICommandHandler<,>), typeof(ValidationBehaviour<,>));
+        services.TryDecorate(typeof(ICommandHandler<>), typeof(ValidationBehaviour<>));
 
         return services;
     }

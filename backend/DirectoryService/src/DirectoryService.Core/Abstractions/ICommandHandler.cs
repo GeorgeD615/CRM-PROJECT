@@ -5,6 +5,8 @@ namespace DirectoryService.Core.Abstractions;
 
 public interface ICommand;
 
+public interface IValidatedCommand : ICommand;
+
 public interface ICommandHandler<TResponse, in TCommand>
     where TCommand : ICommand
 {
