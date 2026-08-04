@@ -3,4 +3,4 @@ using DirectoryService.Core.Abstractions;
 
 namespace DirectoryService.Core.Departments.CreateDepartment;
 
-public record CreateDepartmentCommand(CreateDepartmentRequest CreateDepartmentDto) : ICommand;
+public record CreateDepartmentCommand(CreateDepartmentRequest CreateDepartmentDto) : IValidatedCommand;

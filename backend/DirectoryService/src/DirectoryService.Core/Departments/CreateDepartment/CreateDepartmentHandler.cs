@@ -1,12 +1,9 @@
 using CSharpFunctionalExtensions;
-using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Database;
-using DirectoryService.Core.Validations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.ValueObjects;
 using DirectoryService.Shared;
-using FluentValidation;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Core.Departments.CreateDepartment;
@@ -18,13 +15,11 @@ namespace DirectoryService.Core.Departments.CreateDepartment;
 /// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class CreateDepartmentHandler(
-    IValidator<CreateDepartmentRequest> validator,
     IDepartmentsRepository departmentsRepository,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
     ILogger<CreateDepartmentHandler> logger) : ICommandHandler<Guid, CreateDepartmentCommand>
 {
-    private readonly IValidator<CreateDepartmentRequest> _validator = validator;
     private readonly IDepartmentsRepository _departmentsRepository = departmentsRepository;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
@@ -32,11 +27,6 @@ public sealed class CreateDepartmentHandler(
 
     public async Task<Result<Guid, Failure>> HandleAsync(CreateDepartmentCommand command, CancellationToken cancellationToken)
     {
-        var validationResult = await _validator.ValidateAsync(command.CreateDepartmentDto, cancellationToken);
-
-        if (!validationResult.IsValid)
-            return validationResult.ToErrors();
-
         var name = DepartmentName.Create(command.CreateDepartmentDto.Name).Value;
         var slug = DepartmentSlug.Create(command.CreateDepartmentDto.Slug).Value;
 

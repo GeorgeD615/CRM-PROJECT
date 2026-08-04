@@ -17,12 +17,10 @@ namespace DirectoryService.Core.Locations.UpdateLocation;
 /// как бизнес-событие, ожидаемые отказы возвращаются как результат.
 /// </summary>
 public sealed class UpdateLocationHandler(
-    IValidator<UpdateLocationRequest> validator,
     ILocationsRepository locationsRepository,
     ITransactionManager transactionManager,
     ILogger<UpdateLocationHandler> logger) : ICommandHandler<UpdateLocationCommand>
 {
-    private readonly IValidator<UpdateLocationRequest> _validator = validator;
     private readonly ILocationsRepository _locationsRepository = locationsRepository;
     private readonly ITransactionManager _transactionManager = transactionManager;
     private readonly ILogger<UpdateLocationHandler> _logger = logger;
@@ -31,11 +29,6 @@ public sealed class UpdateLocationHandler(
     {
         Guid locationId = command.LocationId;
         UpdateLocationRequest request = command.UpdateLocationDto;
-
-        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
-
-        if (!validationResult.IsValid)
-            return validationResult.ToErrors();
 
         Result<Location, Failure> locationResult = await _locationsRepository.GetByIdAsync(
             LocationId.Create(locationId),

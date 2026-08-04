@@ -10,24 +10,24 @@ namespace DirectoryService.Core.Departments.CreateDepartment;
 /// Валидация запроса на создание подразделения: имя и slug переиспользуют доменные фабрики VO,
 /// проверки id родителя и локаций — request-specific и отдают доменный Error.
 /// </summary>
-public sealed class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartmentRequest>
+public sealed class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartmentCommand>
 {
     public CreateDepartmentRequestValidator()
     {
-        RuleFor(r => r.Name).MustBeValueObject(DepartmentName.Create);
+        RuleFor(r => r.CreateDepartmentDto.Name).MustBeValueObject(DepartmentName.Create);
 
-        RuleFor(r => r.Slug).MustBeValueObject(DepartmentSlug.Create);
+        RuleFor(r => r.CreateDepartmentDto.Slug).MustBeValueObject(DepartmentSlug.Create);
 
-        RuleFor(r => r.ParentId)
+        RuleFor(r => r.CreateDepartmentDto.ParentId)
             .NotEqual(Guid.Empty)
             .WithError(Error.Validation("Id родительского подразделения не может быть пустым.", "ParentId", "department.parent_id.empty"))
-            .When(r => r.ParentId.HasValue);
+            .When(r => r.CreateDepartmentDto.ParentId.HasValue);
 
-        RuleFor(r => r.LocationIds)
+        RuleFor(r => r.CreateDepartmentDto.LocationIds)
             .NotNull()
             .WithError(Error.Validation("Список локаций обязателен.", "LocationIds", "department.location_ids.required"));
 
-        RuleForEach(r => r.LocationIds)
+        RuleForEach(r => r.CreateDepartmentDto.LocationIds)
             .NotEmpty()
             .WithError(Error.Validation("Id локации не может быть пустым.", "LocationIds", "department.location_id.empty"));
     }
