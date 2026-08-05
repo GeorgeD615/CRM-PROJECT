@@ -32,4 +32,14 @@ public interface ILocationsRepository
     Task<IReadOnlyCollection<LocationId>> GetExistingIdsAsync(
         IReadOnlyCollection<LocationId> locationIds,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Проверяет, привязана ли локация хотя бы к одному подразделению.
+    /// </summary>
+    Task<bool> HasLinkedDepartmentsAsync(LocationId id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Удаляет локацию из текущего контекста (без сохранения).
+    /// </summary>
+    void Remove(Location location);
 }

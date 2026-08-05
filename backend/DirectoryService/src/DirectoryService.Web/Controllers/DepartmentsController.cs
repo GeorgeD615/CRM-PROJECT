@@ -2,8 +2,11 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Departments.AttachLocation;
+using DirectoryService.Core.Departments.AttachPosition;
 using DirectoryService.Core.Departments.CreateDepartment;
+using DirectoryService.Core.Departments.DeleteDepartment;
 using DirectoryService.Core.Departments.DetachLocation;
+using DirectoryService.Core.Departments.DetachPosition;
 using DirectoryService.Core.Departments.UpdateDepartment;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
@@ -88,12 +91,40 @@ public sealed class DepartmentsController : ControllerBase
         return await detachLocationHandler.HandleAsync(new(departmentId, locationId), cancellationToken);
     }
 
+    [HttpPost("{departmentId:guid}/positions/{positionId:guid}")]
+    [ProducesResponseType<Envelope>(StatusCodes.Status201Created)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> AttachPosition(
+        [FromRoute] Guid departmentId,
+        [FromRoute] Guid positionId,
+        [FromServices] ICommandHandler<AttachPositionCommand> attachPositionHandler,
+        CancellationToken cancellationToken)
+    {
+        return EndpointResult.Created(await attachPositionHandler.HandleAsync(new(departmentId, positionId), cancellationToken));
+    }
+
+    [HttpDelete("{departmentId:guid}/positions/{positionId:guid}")]
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
+    public async Task<EndpointResult> DetachPosition(
+        [FromRoute] Guid departmentId,
+        [FromRoute] Guid positionId,
+        [FromServices] ICommandHandler<DetachPositionCommand> detachPositionHandler,
+        CancellationToken cancellationToken)
+    {
+        return await detachPositionHandler.HandleAsync(new(departmentId, positionId), cancellationToken);
+    }
+
     [HttpDelete("{id:guid}")]
     [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult Delete([FromRoute] Guid id)
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> Delete(
+        [FromRoute] Guid id,
+        [FromServices] ICommandHandler<DeleteDepartmentCommand> deleteDepartmentHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: удаление ещё не реализовано (нет команды).
-        return UnitResult.Success<Failure>();
+        return await deleteDepartmentHandler.HandleAsync(new(id), cancellationToken);
     }
 }

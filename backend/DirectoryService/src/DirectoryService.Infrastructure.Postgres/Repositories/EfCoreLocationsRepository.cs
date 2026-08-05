@@ -38,5 +38,10 @@ public sealed class EfCoreLocationsRepository(AppDbContext dbContext) : ILocatio
             .Select(l => l.Id)
             .ToArrayAsync(cancellationToken);
 
+    public Task<bool> HasLinkedDepartmentsAsync(LocationId id, CancellationToken cancellationToken) =>
+        _dbContext.DepartmentLocations.AnyAsync(dl => dl.LocationId == id, cancellationToken);
+
     public void Add(Location location) => _dbContext.Locations.Add(location);
+
+    public void Remove(Location location) => _dbContext.Locations.Remove(location);
 }

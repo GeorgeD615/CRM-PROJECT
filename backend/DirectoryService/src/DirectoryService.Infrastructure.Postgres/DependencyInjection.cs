@@ -26,6 +26,7 @@ public static class DependencyInjection
 
         services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
         services.AddScoped<IDepartmentsRepository, EfCoreDepartmentsRepository>();
+        services.AddScoped<IPositionsRepository, EfCorePositionsRepository>();
         services.AddScoped<ITransactionManager, TransactionManager>();
 
         return services;
