@@ -38,4 +38,33 @@ public interface IDepartmentsRepository
     /// Удаляет связь подразделения с локацией из текущего контекста (без сохранения).
     /// </summary>
     void RemoveDepartmentLocation(DepartmentLocation departmentLocation);
+
+    /// <summary>
+    /// Проверяет, есть ли у подразделения дочерние подразделения.
+    /// </summary>
+    Task<bool> HasChildrenAsync(DepartmentId id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Удаляет подразделение из текущего контекста (без сохранения). Связи с локациями
+    /// и должностями удаляются каскадно на уровне БД в той же транзакции.
+    /// </summary>
+    void Remove(Department department);
+
+    /// <summary>
+    /// Возвращает связь подразделения с должностью; <see cref="ErrorType.NotFound"/>, если связи нет.
+    /// </summary>
+    Task<Result<DepartmentPosition, Failure>> GetDepartmentPositionAsync(
+        DepartmentId departmentId,
+        PositionId positionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Добавляет связь подразделения с должностью в текущий контекст (без сохранения).
+    /// </summary>
+    void AddDepartmentPosition(DepartmentPosition departmentPosition);
+
+    /// <summary>
+    /// Удаляет связь подразделения с должностью из текущего контекста (без сохранения).
+    /// </summary>
+    void RemoveDepartmentPosition(DepartmentPosition departmentPosition);
 }

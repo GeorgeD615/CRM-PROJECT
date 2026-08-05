@@ -2,6 +2,7 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Locations.CreateLocation;
+using DirectoryService.Core.Locations.DeleteLocation;
 using DirectoryService.Core.Locations.UpdateLocation;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
@@ -64,9 +65,12 @@ public sealed class LocationsController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult Delete([FromRoute] Guid id)
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> Delete(
+        [FromRoute] Guid id,
+        [FromServices] ICommandHandler<DeleteLocationCommand> deleteLocationHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: удаление ещё не реализовано (нет команды).
-        return UnitResult.Success<Failure>();
+        return await deleteLocationHandler.HandleAsync(new(id), cancellationToken);
     }
 }

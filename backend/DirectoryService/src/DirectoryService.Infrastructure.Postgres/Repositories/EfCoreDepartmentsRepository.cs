@@ -55,4 +55,32 @@ public sealed class EfCoreDepartmentsRepository(AppDbContext dbContext) : IDepar
 
     public void RemoveDepartmentLocation(DepartmentLocation departmentLocation) =>
         _dbContext.DepartmentLocations.Remove(departmentLocation);
+
+    public Task<bool> HasChildrenAsync(DepartmentId id, CancellationToken cancellationToken) =>
+        _dbContext.Departments.AnyAsync(d => d.ParentId == id, cancellationToken);
+
+    public void Remove(Department department) => _dbContext.Departments.Remove(department);
+
+    public async Task<Result<DepartmentPosition, Failure>> GetDepartmentPositionAsync(
+        DepartmentId departmentId,
+        PositionId positionId,
+        CancellationToken cancellationToken)
+    {
+        DepartmentPosition? link = await _dbContext.DepartmentPositions.FirstOrDefaultAsync(
+            dp => dp.DepartmentId == departmentId && dp.PositionId == positionId,
+            cancellationToken);
+
+        if (link is null)
+            return Failure.From(Error.NotFound(
+                $"Связь подразделения '{departmentId.Value}' с должностью '{positionId.Value}' не найдена.",
+                code: "directory.department_position.not_found"));
+
+        return link;
+    }
+
+    public void AddDepartmentPosition(DepartmentPosition departmentPosition) =>
+        _dbContext.DepartmentPositions.Add(departmentPosition);
+
+    public void RemoveDepartmentPosition(DepartmentPosition departmentPosition) =>
+        _dbContext.DepartmentPositions.Remove(departmentPosition);
 }

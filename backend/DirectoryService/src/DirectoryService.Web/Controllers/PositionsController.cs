@@ -1,5 +1,9 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Positions;
+using DirectoryService.Core.Abstractions;
+using DirectoryService.Core.Positions.CreatePosition;
+using DirectoryService.Core.Positions.DeletePosition;
+using DirectoryService.Core.Positions.UpdatePosition;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
@@ -7,26 +11,29 @@ using Microsoft.AspNetCore.Mvc;
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// Заглушка API должностей: контракты, коды ответов и Envelope-форма настоящие,
-/// доменная реализация (Core) придёт в следующих задачах.
+/// API должностей. Запись делегируется в Core, чтение — заглушки до следующих задач.
 /// </summary>
 [ApiController]
 [Route("api/positions")]
 public sealed class PositionsController : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType<Envelope<PositionResponse>>(StatusCodes.Status201Created)]
-    public EndpointResult<PositionResponse> Create([FromBody] CreatePositionRequest request)
+    [ProducesResponseType<Envelope<Guid>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult<Guid>> Create(
+        [FromBody] CreatePositionRequest request,
+        [FromServices] ICommandHandler<Guid, CreatePositionCommand> createPositionHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: возвращает переданные данные как созданный ресурс.
-        var response = new PositionResponse(Guid.NewGuid(), request.Name);
-        return EndpointResult<PositionResponse>.Created(Result.Success<PositionResponse, Failure>(response));
+        return EndpointResult<Guid>.Created(await createPositionHandler.HandleAsync(new(request), cancellationToken));
     }
 
     [HttpGet]
     [ProducesResponseType<Envelope<IReadOnlyCollection<PositionResponse>>>(StatusCodes.Status200OK)]
     public EndpointResult<IReadOnlyCollection<PositionResponse>> GetAll()
     {
+        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
         IReadOnlyCollection<PositionResponse> positions = [];
         return Result.Success<IReadOnlyCollection<PositionResponse>, Failure>(positions);
     }
@@ -41,22 +48,29 @@ public sealed class PositionsController : ControllerBase
             Error.NotFound($"Должность '{id}' не найдена.", code: "directory.position.not_found"));
     }
 
-    [HttpPut("{id:guid}")]
-    [ProducesResponseType<Envelope<PositionResponse>>(StatusCodes.Status200OK)]
+    [HttpPatch("{id:guid}")]
+    [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult<PositionResponse> Update([FromRoute] Guid id, [FromBody] UpdatePositionRequest request)
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> Update(
+        [FromRoute] Guid id,
+        [FromBody] UpdatePositionRequest request,
+        [FromServices] ICommandHandler<UpdatePositionCommand> updatePositionHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: возвращает переданные данные как обновлённый ресурс.
-        var response = new PositionResponse(id, request.Name);
-        return Result.Success<PositionResponse, Failure>(response);
+        return await updatePositionHandler.HandleAsync(new(id, request), cancellationToken);
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType<Envelope>(StatusCodes.Status200OK)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult Delete([FromRoute] Guid id)
+    [ProducesResponseType<Envelope>(StatusCodes.Status409Conflict)]
+    public async Task<EndpointResult> Delete(
+        [FromRoute] Guid id,
+        [FromServices] ICommandHandler<DeletePositionCommand> deletePositionHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: удаление ещё не реализовано (нет команды).
-        return UnitResult.Success<Failure>();
+        return await deletePositionHandler.HandleAsync(new(id), cancellationToken);
     }
 }
