@@ -7,6 +7,7 @@ using DirectoryService.Core.Departments.CreateDepartment;
 using DirectoryService.Core.Departments.DeleteDepartment;
 using DirectoryService.Core.Departments.DetachLocation;
 using DirectoryService.Core.Departments.DetachPosition;
+using DirectoryService.Core.Departments.GetDepartmentById;
 using DirectoryService.Core.Departments.UpdateDepartment;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
@@ -44,13 +45,14 @@ public sealed class DepartmentsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType<Envelope<DepartmentResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope<GetDepartmentDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult<DepartmentResponse> GetById([FromRoute] Guid id)
+    public async Task<EndpointResult<GetDepartmentDto>> GetById(
+        [FromRoute] Guid id,
+        [FromServices] IQueryHandler<GetDepartmentDto, GetDepartmentByIdQuery> getDepartmentByIdHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
-        return Result.Failure<DepartmentResponse, Failure>(
-            Error.NotFound($"Подразделение '{id}' не найдено.", code: "directory.department.not_found"));
+        return await getDepartmentByIdHandler.HandleAsync(new(id), cancellationToken);
     }
 
     [HttpPatch("{id:guid}")]
