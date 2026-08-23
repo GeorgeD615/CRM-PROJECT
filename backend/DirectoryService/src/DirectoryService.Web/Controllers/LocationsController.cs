@@ -3,6 +3,7 @@ using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Locations.CreateLocation;
 using DirectoryService.Core.Locations.DeleteLocation;
+using DirectoryService.Core.Locations.GetLocationById;
 using DirectoryService.Core.Locations.UpdateLocation;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
@@ -39,13 +40,14 @@ public sealed class LocationsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType<Envelope<LocationResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope<GetLocationDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<Envelope>(StatusCodes.Status404NotFound)]
-    public EndpointResult<LocationResponse> GetById([FromRoute] Guid id)
+    public async Task<EndpointResult<GetLocationDto>> GetById(
+        [FromRoute] Guid id,
+        [FromServices] IQueryHandler<GetLocationDto, GetLocationByIdQuery> getLocationByIdHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
-        return Result.Failure<LocationResponse, Failure>(
-            Error.NotFound($"Локация '{id}' не найдена.", code: "directory.location.not_found"));
+        return await getLocationByIdHandler.HandleAsync(new(id), cancellationToken);
     }
 
     [HttpPatch("{id:guid}")]

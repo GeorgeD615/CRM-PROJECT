@@ -23,6 +23,8 @@ public static class DependencyInjection
             connectionString,
             npgsqlOptions => npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history")));
 
+        // Read-сторона получает тот же scoped-контекст, но только через контракт без операций записи.
+        services.AddScoped<IReadDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
         services.AddScoped<IDepartmentsRepository, EfCoreDepartmentsRepository>();
