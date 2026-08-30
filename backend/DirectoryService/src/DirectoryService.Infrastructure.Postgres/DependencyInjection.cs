@@ -26,6 +26,9 @@ public static class DependencyInjection
         // Read-сторона получает тот же scoped-контекст, но только через контракт без операций записи.
         services.AddScoped<IReadDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
+        // Фабрика без состояния: подключения на каждый Dapper-запрос берутся из пула Npgsql.
+        services.AddSingleton<IDbConnectionFactory>(_ => new NpgsqlConnectionFactory(connectionString));
+
         services.AddScoped<ILocationsRepository, EfCoreLocationsRepository>();
         services.AddScoped<IDepartmentsRepository, EfCoreDepartmentsRepository>();
         services.AddScoped<IPositionsRepository, EfCorePositionsRepository>();

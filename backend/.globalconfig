@@ -93,3 +93,8 @@ dotnet_diagnostic.CA1040.severity = none
 dotnet_diagnostic.CA1063.severity = none
 dotnet_diagnostic.CA1816.severity = none
 dotnet_diagnostic.S3881.severity = none
+
+#IReadOnlyCollection 
+dotnet_diagnostic.CA1859.severity = none
+
+dotnet_diagnostic.S125.severity = none

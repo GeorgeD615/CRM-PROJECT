@@ -4,6 +4,7 @@ using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Locations.CreateLocation;
 using DirectoryService.Core.Locations.DeleteLocation;
 using DirectoryService.Core.Locations.GetLocationById;
+using DirectoryService.Core.Locations.GetTopLocations;
 using DirectoryService.Core.Locations.UpdateLocation;
 using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
@@ -37,6 +38,15 @@ public sealed class LocationsController : ControllerBase
         // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
         IReadOnlyCollection<LocationResponse> locations = [];
         return Result.Success<IReadOnlyCollection<LocationResponse>, Failure>(locations);
+    }
+
+    [HttpGet("top")]
+    [ProducesResponseType<Envelope<IReadOnlyCollection<GetTopLocationDto>>>(StatusCodes.Status200OK)]
+    public async Task<EndpointResult<IReadOnlyCollection<GetTopLocationDto>>> GetTop(
+        [FromServices] IQueryHandler<IReadOnlyCollection<GetTopLocationDto>, GetTopLocationsQuery> getTopLocationsHandler,
+        CancellationToken cancellationToken)
+    {
+        return await getTopLocationsHandler.HandleAsync(new(), cancellationToken);
     }
 
     [HttpGet("{id:guid}")]
