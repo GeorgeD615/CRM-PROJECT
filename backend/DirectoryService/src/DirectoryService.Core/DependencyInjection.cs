@@ -1,5 +1,7 @@
+using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Behaviours;
+using DirectoryService.Core.Locations.GetTopLocations;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,13 +19,32 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
 
+        // Топ локаций существует в двух реализациях сразу, поэтому выбор активной делается
+        // вручную ниже, а из сканирования обе исключаются.
+        Type[] manuallyRegisteredHandlers =
+        [
+            typeof(GetTopLocationsEfCoreHandler),
+            typeof(GetTopLocationsDapperHandler),
+        ];
+
         services.Scan(scan => scan.FromAssemblies(assembly)
-            .AddClasses(classes => classes.AssignableToAny(
-                typeof(ICommandHandler<,>),
-                typeof(ICommandHandler<>),
-                typeof(IQueryHandler<,>)))
+            .AddClasses(classes => classes
+                .AssignableToAny(
+                    typeof(ICommandHandler<,>),
+                    typeof(ICommandHandler<>),
+                    typeof(IQueryHandler<,>))
+                .Where(type => !manuallyRegisteredHandlers.Contains(type)))
             .AsSelfWithInterfaces()
             .WithScopedLifetime());
+
+        // Переключение реализации топ-локаций: закомментируйте активную строку и раскомментируйте вторую.
+        //services.AddScoped<
+        //    IQueryHandler<IReadOnlyCollection<GetTopLocationDto>, GetTopLocationsQuery>,
+        //    GetTopLocationsEfCoreHandler>();
+
+        services.AddScoped<
+            IQueryHandler<IReadOnlyCollection<GetTopLocationDto>, GetTopLocationsQuery>,
+            GetTopLocationsDapperHandler>();
 
         services.TryDecorate(typeof(ICommandHandler<,>), typeof(ValidationBehaviour<,>));
         services.TryDecorate(typeof(ICommandHandler<>), typeof(ValidationBehaviour<>));
