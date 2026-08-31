@@ -18,8 +18,12 @@ public sealed class DepartmentConfiguration : IEntityTypeConfiguration<Departmen
             .HasColumnName("id")
             .ValueGeneratedNever();
 
+        // Конвертер с пропуском провайдерного значения: по имени идёт поиск подстроки,
+        // и EF передаёт шаблон LIKE параметром с type mapping этой колонки.
         builder.Property(d => d.Name)
-            .HasConversion(name => name.Value, value => DepartmentName.Create(value).Value)
+            .HasConversion(new ValueObjectConverter<DepartmentName, string>(
+                name => name.Value,
+                value => DepartmentName.Create(value).Value))
             .HasColumnName("name")
             .HasMaxLength(DepartmentName.MaxLength)
             .IsRequired();

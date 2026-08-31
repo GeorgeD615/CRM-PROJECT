@@ -1,4 +1,4 @@
-using CSharpFunctionalExtensions;
+using DirectoryService.Contracts;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Departments.AttachLocation;
@@ -8,16 +8,16 @@ using DirectoryService.Core.Departments.DeleteDepartment;
 using DirectoryService.Core.Departments.DetachLocation;
 using DirectoryService.Core.Departments.DetachPosition;
 using DirectoryService.Core.Departments.GetDepartmentById;
+using DirectoryService.Core.Departments.GetDepartments;
 using DirectoryService.Core.Departments.UpdateDepartment;
-using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// API подразделений. Создание, обновление и связи с локациями делегируются в Core,
-/// чтение — заглушки до следующих задач.
+/// API подразделений. Команды и сценарии чтения делегируются в Core,
+/// контроллер только принимает параметры и отдаёт результат через <see cref="EndpointResult{TValue}"/>.
 /// </summary>
 [ApiController]
 [Route("api/departments")]
@@ -36,12 +36,14 @@ public sealed class DepartmentsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType<Envelope<IReadOnlyCollection<DepartmentResponse>>>(StatusCodes.Status200OK)]
-    public EndpointResult<IReadOnlyCollection<DepartmentResponse>> GetAll()
+    [ProducesResponseType<Envelope<PagedResult<DepartmentListItemDto>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
+    public async Task<EndpointResult<PagedResult<DepartmentListItemDto>>> Get(
+        [FromQuery] GetDepartmentsRequest request,
+        [FromServices] IQueryHandler<PagedResult<DepartmentListItemDto>, GetDepartmentsQuery> getDepartmentsHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
-        IReadOnlyCollection<DepartmentResponse> departments = [];
-        return Result.Success<IReadOnlyCollection<DepartmentResponse>, Failure>(departments);
+        return await getDepartmentsHandler.HandleAsync(new(request), cancellationToken);
     }
 
     [HttpGet("{id:guid}")]
