@@ -1,19 +1,20 @@
-using CSharpFunctionalExtensions;
+using DirectoryService.Contracts;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Core.Abstractions;
 using DirectoryService.Core.Locations.CreateLocation;
 using DirectoryService.Core.Locations.DeleteLocation;
 using DirectoryService.Core.Locations.GetLocationById;
+using DirectoryService.Core.Locations.GetLocations;
 using DirectoryService.Core.Locations.GetTopLocations;
 using DirectoryService.Core.Locations.UpdateLocation;
-using DirectoryService.Shared;
 using DirectoryService.Web.EndpointResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Web.Controllers;
 
 /// <summary>
-/// API локаций. Создание и обновление делегируются в Core, остальные операции — заглушки до следующих задач.
+/// API локаций. Команды и сценарии чтения делегируются в Core,
+/// контроллер только принимает параметры и отдаёт результат через <see cref="EndpointResult{TValue}"/>.
 /// </summary>
 [ApiController]
 [Route("api/locations")]
@@ -32,12 +33,14 @@ public sealed class LocationsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType<Envelope<IReadOnlyCollection<LocationResponse>>>(StatusCodes.Status200OK)]
-    public EndpointResult<IReadOnlyCollection<LocationResponse>> GetAll()
+    [ProducesResponseType<Envelope<PagedResult<LocationListItemDto>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Envelope>(StatusCodes.Status400BadRequest)]
+    public async Task<EndpointResult<PagedResult<LocationListItemDto>>> Get(
+        [FromQuery] GetLocationsRequest request,
+        [FromServices] IQueryHandler<PagedResult<LocationListItemDto>, GetLocationsQuery> getLocationsHandler,
+        CancellationToken cancellationToken)
     {
-        // Заглушка: чтение ещё не реализовано (нет query-хэндлера).
-        IReadOnlyCollection<LocationResponse> locations = [];
-        return Result.Success<IReadOnlyCollection<LocationResponse>, Failure>(locations);
+        return await getLocationsHandler.HandleAsync(new(request), cancellationToken);
     }
 
     [HttpGet("top")]
